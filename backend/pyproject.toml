@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "backend"
+version = "0.1.0"
+description = ""
+authors = ["CoSm1C AvEnGeR <zhora.zhilin.06@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = {extras = ["all"], version = "^0.110.1"}
+asyncpg = "^0.29.0"
+sqlalchemy = "^2.0.29"
+alembic = "^1.13.1"
+fastapi-users = {extras = ["sqlalchemy"], version = "^13.0.0"}
+asana = "^5.0.6"
+httpx-oauth = "^0.14.0"
+starlette-exporter = "^0.21.0"
+slugify = "^0.0.1"
+pillow = "^10.3.0"
+requests = "^2.31.0"
+bs4 = "^0.0.2"
+python-dotenv = "^1.0.1"
+strawberry-graphql = "^0.224.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
