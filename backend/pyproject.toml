@@ -21,6 +21,7 @@ requests = "^2.31.0"
 bs4 = "^0.0.2"
 python-dotenv = "^1.0.1"
 strawberry-graphql = "^0.224.1"
+pendulum = "^3.0.0"
 
 
 [build-system]

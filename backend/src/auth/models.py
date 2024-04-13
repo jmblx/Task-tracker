@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 from my_type_notation import added_at, intpk
-from task.models import UserTask, Task # noqa
+from task.models import UserTask, Task, Group# noqa
 
 
 class OAuthAccount(SQLAlchemyBaseOAuthAccountTableUUID, Base):
@@ -20,8 +20,8 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     first_name: Mapped[str]
     last_name: Mapped[str]
     role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), default=1)
-    roles: Mapped[list["Role"]] = relationship(
-        back_populates="user", uselist=True
+    role: Mapped["Role"] = relationship(
+        back_populates="users", uselist=False
     )
     email: Mapped[str]
     is_email_confirmed: Mapped[bool] = mapped_column(default=False)
@@ -43,6 +43,8 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     oauth_accounts: Mapped[List[OAuthAccount]] = relationship(
         "OAuthAccount", lazy="joined"
     )
+    groups: Mapped[List["Group"]] = relationship("Group", uselist=True, back_populates="user")
+    github_name: Mapped[str] = mapped_column(nullable=True)
 
 
 class Role(Base):
@@ -51,4 +53,4 @@ class Role(Base):
     id: Mapped[intpk]
     name: Mapped[str] = mapped_column(nullable=False)
     permissions: Mapped[dict] = mapped_column(JSON)
-    user: Mapped["User"] = relationship(back_populates="roles", uselist=False)
+    users: Mapped[List["User"]] = relationship(back_populates="role", uselist=True)

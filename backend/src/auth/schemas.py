@@ -1,14 +1,16 @@
 import uuid
 import datetime
-from typing import Optional
+from typing import Optional, List
 
 from fastapi_users import schemas
 from pydantic import BaseModel, EmailStr
 from typing import Any, Dict
 
+from task.schemas import TaskSchema
+
 
 class UserSchema(schemas.BaseUser[uuid.UUID]):
-
+    id: uuid.UUID
     first_name: str
     last_name: str
     role_id: int
@@ -23,6 +25,7 @@ class UserSchema(schemas.BaseUser[uuid.UUID]):
     organization_id: Optional[int]
     is_email_confirmed: bool
     registered_at: datetime.datetime
+    tasks: Optional[List["TaskSchema"]] = None
 
     class Config:
         from_attributes = True
@@ -36,7 +39,6 @@ class UserFind(BaseModel):
 
 
 class UserCreate(schemas.BaseUserCreate):
-    # схема pydantic для взаимодействия с регистрацией
     first_name: str
     last_name: str
     role_id: int
@@ -48,15 +50,17 @@ class UserCreate(schemas.BaseUserCreate):
     pathfile: Optional[str] = None
     tg_id: Optional[str] = None
     tg_settings: Optional[dict] = None
+    github_name: Optional[str] = None
 
 
 class UserUpdate(schemas.BaseUserUpdate):
-    first_name: Optional[str]
-    last_name: Optional[str]
-    role_id: Optional[int]
-    email: Optional[EmailStr]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role_id: Optional[int] = None
+    email: Optional[EmailStr] = None
     tg_id: Optional[str] = None
     tg_settings: Optional[dict] = None
+    github_name: Optional[str] = None
 
 
 class UserGoogleRegistration(BaseModel):
@@ -74,23 +78,27 @@ class RoleSchema(BaseModel):
 class RoleRead(RoleSchema):
     id: int
 
-
-class UserRead(schemas.BaseUser[uuid.UUID]):
-
-    first_name: str
-    last_name: str
-    role_id: int
-    email: EmailStr
-    is_active: bool = True
-    is_superuser: bool = False
-    is_verified: bool = False
-    pathfile: Optional[str] = None
-    role: RoleRead
-    tg_id: Optional[str] = None
-    tg_settings: Optional[dict] = None
-
     class Config:
         from_attributes = True
 
 
+class UserRead(BaseModel):
+    id: uuid.UUID
+    first_name: str
+    last_name: str
+    email: str
+    is_active: bool
+    is_superuser: bool
+    is_verified: bool
+    registered_at: datetime.datetime
+    role_id: int
+    pathfile: Optional[str] = None
+    tg_id: Optional[str] = None
+    tg_settings: Optional[dict] = None
+    organization_id: Optional[int] = None
+    is_email_confirmed: bool
+    role: RoleRead
+    tasks: Optional[List["TaskSchema"]] = None
 
+    class Config:
+        from_attributes=True

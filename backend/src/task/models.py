@@ -1,7 +1,8 @@
 import datetime
 import enum
+from uuid import UUID
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, Interval
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -35,10 +36,12 @@ class Task(Base):
     )
     assigner_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=True)
     color: Mapped[str]
-    duration: Mapped[datetime.datetime]
+    duration = mapped_column(Interval)
     difficulty: Mapped[Difficulty] = mapped_column(nullable=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("project.id"))
     project = relationship("Project", uselist=False, back_populates="tasks")
+    group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=True)
+    group = relationship("Group", uselist=False, back_populates="tasks")
 
 
 class UserTask(Base):
@@ -49,3 +52,13 @@ class UserTask(Base):
     task_id: Mapped[int] = mapped_column(ForeignKey("task.id"), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     is_employee: Mapped[bool] = mapped_column(nullable=False, default=True)
+
+
+class Group(Base):
+    __tablename__ = "group"
+
+    id: Mapped[intpk]
+    name: Mapped[str]
+    tasks = relationship("Task", uselist=True, back_populates="group")
+    user = relationship("User", uselist=False, back_populates="groups")
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), nullable=False)

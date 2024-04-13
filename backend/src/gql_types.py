@@ -1,47 +1,28 @@
 from typing import Optional, List
-import datetime
+from uuid import UUID
 
 import strawberry
-from strawberry.schema.types.concrete_type import Field
 
+from auth.task_read_schema import TaskRead
+from task.schemas import TaskUpdate, TaskFind, TaskSchema
 from auth.schemas import UserRead, UserFind, UserUpdate, UserSchema, RoleRead, UserCreate
 from organization.schemas import (
     OrganizationRead, OrganizationFind, OrganizationCreate, OrganizationUpdate
 )
 from project.schemas import ProjectFind, ProjectRead, ProjectCreate, ProjectUpdate
-from task.schemas import TaskCreate, TaskUpdate, TaskFind, TaskRead
+from scalars import DateTime, Duration
 
 
-@strawberry.experimental.pydantic.type(model=RoleRead, fields=["name", "id"])
+@strawberry.input
+class UserAssigneeType:
+    id: UUID
+    organization_id: int
+    github_data: Optional[strawberry.scalars.JSON]
+
+
+@strawberry.experimental.pydantic.type(model=RoleRead, fields=["id", "name"])
 class RoleReadType:
     permissions: strawberry.scalars.JSON
-
-
-@strawberry.experimental.pydantic.type(model=UserSchema, fields=[
-    'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
-    'is_verified', 'pathfile', 'role', 'tg_id', 'organization_id',
-    'is_email_confirmed', 'registered_at'
-])
-class UserType:
-    tg_settings: strawberry.scalars.JSON
-
-
-# @strawberry.type
-# class UserSchemaType:
-#     first_name: str
-#     last_name: str
-#     role_id: int
-#     email: str
-#     is_active: bool = True
-#     is_superuser: bool = False
-#     is_verified: bool = False
-#     pathfile: Optional[str] = None
-#     role: "RoleRead"
-#     tg_id: Optional[str] = None
-#     tg_settings: Optional[dict] = None
-#     organization_id: Optional[int]
-#     is_email_confirmed: bool
-#     registered_at: datetime.datetime
 
 
 @strawberry.experimental.pydantic.input(model=UserFind, fields=[
@@ -53,7 +34,7 @@ class UserFindType:
 
 @strawberry.experimental.pydantic.type(model=UserRead, fields=[
     'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
-    'is_verified', 'pathfile', 'role', 'tg_id'
+    'is_verified', 'pathfile', 'role', 'tg_id', 'id'
 ])
 class UserReadType:
     # Используем strawberry.scalars.JSON для tg_settings
@@ -62,7 +43,7 @@ class UserReadType:
 
 @strawberry.experimental.pydantic.type(model=UserCreate, fields=[
     'first_name', 'last_name', 'role_id', 'email', 'password', 'is_active',
-    'is_superuser', 'is_verified', 'pathfile', 'tg_id'
+    'is_superuser', 'is_verified', 'pathfile', 'tg_id', 'github_name'
 ])
 class UserCreateType:
     tg_settings: strawberry.scalars.JSON
@@ -92,6 +73,63 @@ class OrganizationCreateType:
 @strawberry.experimental.pydantic.input(model=OrganizationUpdate, all_fields=True)
 class OrganizationUpdateType:
     pass
+
+
+@strawberry.experimental.pydantic.type(model=TaskSchema, fields=[
+    'id', 'name', 'description', 'is_done', 'added_at', 'done_at',
+    'color', 'difficulty', 'project_id', 'group_id'])
+class TaskType:
+    duration: Optional[Duration] = strawberry.field(description="The duration of the task in seconds.")
+
+
+@strawberry.experimental.pydantic.input(model=TaskFind, all_fields=True)
+class TaskFindType:
+    pass
+
+
+@strawberry.input
+class TaskCreateType:
+    name: str
+    description: Optional[str]
+    is_done: Optional[bool]
+    assigner_id: UUID
+    color: Optional[str]
+    duration: Duration
+    difficulty: Optional[str]
+    project_id: int
+    group_id: Optional[int]
+    assignees: Optional[List[UserAssigneeType]]
+
+@strawberry.experimental.pydantic.type(model=TaskRead, fields=[
+    'id', 'name', 'description', 'is_done', 'assigner_id', 'color', 'difficulty', 'project_id', 'assignees', 'assigner'])
+class TaskReadType:
+    added_at: DateTime
+    done_at: DateTime
+    duration: Duration
+
+@strawberry.experimental.pydantic.input(model=TaskUpdate, fields=[
+    'name', 'description', 'is_done', 'assigner_id', 'color', 'difficulty', 'project_id'])
+class TaskUpdateType:
+    added_at: Optional[DateTime] = None
+    done_at: Optional[DateTime] = None
+    duration: Optional[Duration]
+
+
+@strawberry.input()
+class TaskDecreaseTime:
+    seconds: int
+
+
+@strawberry.experimental.pydantic.type(model=UserSchema, fields=[
+    'id',
+    'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
+    'is_verified', 'pathfile', 'tg_id', 'organization_id',
+    'is_email_confirmed', 'registered_at'
+])
+class UserType:
+    tg_settings: strawberry.scalars.JSON
+    role: Optional[RoleReadType]
+    tasks: List[TaskType]
 
 
 @strawberry.experimental.pydantic.type(model=ProjectRead, all_fields=True)
@@ -124,45 +162,3 @@ class ProjectUpdateType:
 #     assignees: Optional[List[UserSchemaType]] = Field(List[UserSchemaType], default=None)
 #     assigner: Optional[UserSchemaType] = Field(UserSchemaType, default=None)
 
-@strawberry.experimental.pydantic.type(model=TaskRead, all_fields=True)
-class TaskType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=TaskFind, all_fields=True)
-class TaskFindType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=TaskCreate, all_fields=True)
-class TaskCreateType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=TaskUpdate, all_fields=True)
-class TaskUpdateType:
-    pass
-
-# @strawberry.experimental.pydantic.type(model=EventResponse)
-# class EventType:
-#     id: strawberry.auto
-#     title: strawberry.auto
-#     description: strawberry.auto
-#     img_path: strawberry.auto
-#     address: strawberry.auto
-#     category: CategoryType
-#
-#
-# @strawberry.experimental.pydantic.input(model=EventAdd, all_fields=True)
-# class EventInputType:
-#     pass
-#
-#
-# @strawberry.experimental.pydantic.input(model=EventUpdate, all_fields=True)
-# class EventUpdateType:
-#     pass
-#
-#
-# @strawberry.experimental.pydantic.input(model=EventGet, all_fields=True)
-# class EventGetType:
-#     pass

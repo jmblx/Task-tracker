@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
+from auth.schemas import UserRead
 
 
 class OrganizationCreate(BaseModel):
@@ -10,6 +11,8 @@ class OrganizationCreate(BaseModel):
 
 class OrganizationRead(OrganizationCreate):
     id: int
+    workers: Optional[List["UserRead"]]
+    managers: Optional[List["UserRead"]]
 
     class Config:
         from_attributes = True

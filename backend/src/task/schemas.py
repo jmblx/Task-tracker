@@ -1,53 +1,75 @@
 import datetime
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
+from uuid import UUID
 
-from pydantic import BaseModel
-
-from auth.schemas import UserRead, UserSchema
-from task.models import Difficulty
+from pydantic import BaseModel, Field, UUID4
 
 
 class TaskBase:
-    name: Optional[str]
-    description: Optional[str]
-    is_done: Optional[bool]
-    added_at: Optional[datetime.datetime]
-    done_at: Optional[datetime.datetime]
-    assigner_id: Optional[int]
-    color: Optional[str]
-    duration: Optional[datetime.datetime]
-    difficulty: Optional[str]
-    project_id: Optional[int]
-
-
-class TaskCreate(BaseModel):
-    name: str
-    description: Optional[str]
-    is_done: Optional[bool]
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_done: Optional[bool] = None
     added_at: Optional[datetime.datetime] = None
     done_at: Optional[datetime.datetime] = None
-    assigner_id: int
+    assigner_id: Optional[UUID] = None
     color: Optional[str] = None
-    duration: datetime.datetime
+    duration: Optional[datetime.timedelta] = Field(default_factory=datetime.timedelta)
     difficulty: Optional[str] = None
-    project_id: int
+    project_id: Optional[int] = None
+    group_id: Optional[int] = None
 
 
-class TaskRead(TaskCreate):
+class TaskSchema(TaskBase, BaseModel):
     id: int
     description: str
     is_done: bool
     added_at: datetime.datetime
-    done_at: datetime.datetime
+    done_at: Optional[datetime.datetime]
     color: str
     difficulty: str
-    assignees: Optional[List["UserSchema"]] = None
-    assigner: Optional["UserSchema"] = None
+
+    class Config:
+        from_attributes = True
 
 
-class TaskUpdate(TaskBase, BaseModel):
-    pass
+def get_user_read():
+    from auth.schemas import UserRead
+    return UserRead
+
+class UserAssignee(BaseModel):
+    id: Optional[UUID]
+    organization_id: Optional[int]
+    github_data: Optional[Dict[str, Any]] = None
+    class Config:
+        from_attributes = True
 
 
-class TaskFind(TaskBase, BaseModel):
-    id: int
+class TaskUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_done: Optional[bool] = None
+    added_at: Optional[datetime] = None
+    done_at: Optional[datetime] = None
+    assigner_id: Optional[UUID4] = None
+    color: Optional[str] = None
+    duration: Optional[datetime.timedelta] = Field(default_factory=datetime.timedelta)
+    difficulty: Optional[str] = None
+    project_id: Optional[int] = None
+    group_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+        arbitrary_types_allowed = True
+
+
+class TaskFind(BaseModel):
+    id: Optional[int] = None
+    name: Optional[str] = None
+    assigner_id: Optional[UUID] = None
+    color: Optional[str] = None
+    difficulty: Optional[str] = None
+    project_id: Optional[int] = None
+    group_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True

@@ -1,22 +1,18 @@
 from fastapi.templating import Jinja2Templates
 
-from auth.schemas import UserFind
+from task.models import UserTask
 
 templates = Jinja2Templates(directory="templates")
 
-# import aiofiles
 import os
-import zipfile
-import io
-from typing import Any, Dict
+
+from typing import Any, Dict, List
 
 from pydantic import BaseModel
 from slugify import slugify
 from sqlalchemy import select, text, or_, func, update, exc, and_, insert
 import shutil
 from PIL import Image
-from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import selectinload
 
 from auth.models import User
 from database import async_session_maker
@@ -278,12 +274,13 @@ async def update_object(
             await session.commit()
 
 
-async def find_obj(class_, data: dict) -> list[User]:
+async def find_obj(class_, data: dict, options=None):
     async with async_session_maker() as session:
         query = select(class_).filter_by(**data)
-        result = (await session.execute(query)).unique().scalar()
-
-        await session.close()
+        if options:
+            for option in options:
+                query = query.options(option)
+        result = (await session.execute(query)).scalars().first()
         return result
 
 
@@ -293,3 +290,27 @@ async def insert_obj(class_, data: dict) -> int:
         result = (await session.execute(query)).scalar()
         await session.commit()
         return result
+
+
+async def insert_task(class_, data: dict, assignees_data: List[Dict[str, Any]]) -> int:
+    async with async_session_maker() as session:
+        query = insert(class_).values(data).returning(class_.id)
+        result = await session.execute(query)
+        task_id = result.scalar()
+
+        for assignee_data in assignees_data:
+            user = await session.get(User, assignee_data['id'])
+            if user:
+                print(data)
+                is_employee = user.organization_id == assignee_data['organization_id']
+                user_task = UserTask(
+                    task_id=task_id,
+                    user_id=user.id,
+                    github_data=assignee_data.get('github_data'),
+                    is_employee=is_employee
+                )
+                session.add(user_task)
+
+        await session.commit()
+        return task_id
+
