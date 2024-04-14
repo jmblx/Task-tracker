@@ -1,8 +1,8 @@
 import os
 
+import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette_exporter import PrometheusMiddleware, handle_metrics
 from strawberry.fastapi import GraphQLRouter
 
 from auth.base_config import (
@@ -12,7 +12,7 @@ from auth.base_config import (
 )
 from auth.custom_auth_router import router as auth_router
 from auth.schemas import UserRead, UserCreate, UserUpdate
-from config import SECRET_AUTH
+from config import SECRET_AUTH, REDIS_HOST, REDIS_PORT
 from graphql_schema import schema
 from user_data.router import router as profile_router
 from integration.multiple_tasks import router as asana_router
@@ -86,5 +86,10 @@ app.add_middleware(
     ],
 )
 
-app.add_middleware(PrometheusMiddleware)
-app.add_route("/metrics", handle_metrics)
+@app.on_event("startup")
+async def startup_event():
+    redis = aioredis.from_url(
+        f"redis://{REDIS_HOST}:{REDIS_PORT}",
+        encoding="utf8",
+        decode_responses=True,
+    )

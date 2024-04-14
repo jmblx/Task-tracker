@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 import strawberry
+from fastapi_users.authentication.strategy import redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_session
 from sqlalchemy.orm import joinedload
@@ -22,7 +23,7 @@ from project.schemas import ProjectRead
 from task.group_schemas import GroupRead
 from task.models import Task, Group
 
-from utils import find_obj, insert_obj, update_object, insert_task
+from utils import find_obj, insert_obj, update_object, insert_task, prepare_data_mailing, send_task_updates
 
 
 @strawberry.type
@@ -152,10 +153,8 @@ class Mutation:
         )
         return True
 
-
     @strawberry.mutation
     async def add_task(self, data: TaskCreateType) -> int:
-        # Теперь `data` напрямую содержит нужные поля, которые можно использовать
         task_data = {
             'name': data.name,
             'description': data.description,
@@ -168,17 +167,23 @@ class Mutation:
             'group_id': data.group_id,
         }
 
-        obj_id = await insert_task(Task, task_data, [assignee.__dict__ for assignee in data.assignees] if data.assignees else [])
+        obj_id = await insert_task(Task, task_data,
+                                   [assignee.__dict__ for assignee in data.assignees] if data.assignees else [])
+
 
         return obj_id
 
     @strawberry.mutation
     async def update_task(self, id: int, data: TaskUpdateType) -> bool:
-        await update_object(
-            data.to_pydantic(),
-            Task,
-            id
-        )
+        await update_object(data.to_pydantic(), Task, id)
+        task = await Task.get(id=id)
+        group = await Group.get(id=task.group_id)
+
+        # Проверяем условия и отправляем уведомления
+        data_mailing = await prepare_data_mailing(task.assigner, task, group, redis)
+        if data_mailing:
+            await send_task_updates(data_mailing)
+
         return True
 
     @strawberry.mutation

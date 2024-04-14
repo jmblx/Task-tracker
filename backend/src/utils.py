@@ -1,11 +1,13 @@
 from fastapi.templating import Jinja2Templates
 
+import config
 from task.models import UserTask, Task, Group
 
 templates = Jinja2Templates(directory="templates")
 
 import os
-
+from aiokafka import AIOKafkaProducer
+import json
 from typing import Any, Dict, List
 
 from pydantic import BaseModel
@@ -229,15 +231,25 @@ def create_task_data(
 
 
 async def prepare_data_mailing(
-    user, team, opponent_team, result, score, opponent_score, redis
+    user: User, task: Task, group: Group, redis
 ) -> Dict:
     if await redis.smembers(f"auth:{user.tg_id}"):
         return {
-            str(player.tg_id): create_task_data(
-                team, opponent_team, result, score, opponent_score
+            str(user.tg_id): create_task_data(
+                user, task, group,
             )
         }
     return {}
+
+
+async def send_task_updates(data_mailing):
+    producer = AIOKafkaProducer(bootstrap_servers=config.KAFKA_BOOTSTRAP_SERVERS)
+    await producer.start()
+    try:
+        message = json.dumps(data_mailing).encode('utf-8')
+        await producer.send_and_wait(config.PRODUCE_TOPIC, message)
+    finally:
+        await producer.stop()
 
 
 async def update_object(

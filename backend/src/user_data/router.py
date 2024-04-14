@@ -121,7 +121,7 @@ async def link_tg(
         stmt = (
             update(User)
             .where(User.email == data.user_email)
-            .values({"tg_id": data.tg_id})
+            .values({"tg_id": str(data.tg_id)})
         )
         await session.execute(stmt)
         await session.commit()

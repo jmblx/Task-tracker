@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
@@ -35,8 +35,6 @@ dp.include_router(auth_router)
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message):
-    sticker_id = 'CAACAgIAAxkBAAEBFfde_sY4fiF8WUHjPp8w0PbwYrWnSgACGgADwDZPE4K7OvPbGCw_GQQ'
-    await bot.send_sticker(message.chat.id, sticker_id)
     await message.answer(
         """
 Конечно, я могу помочь украсить сообщение смайликами и дать совет по использованию стикеров в aiogram для приветствия пользователей. Вот как можно оформить ваше сообщение:
@@ -57,40 +55,31 @@ async def consume() -> None:
         async for msg in consumer:
             messages = json.loads(msg.value)
             for telegram_id, serialized in messages.items():
-                print(serialized, "ser")
-                print(telegram_id, "tg_id")
-                print(f'type {serialized.get("match_type")}')
-                if serialized.get("match_type") == "1x1":
-                    await bot.send_message(
-                        chat_id=int(telegram_id),
-                        text=serialized.get("match_result"),
+                if serialized.get("task_type") == "new_task":
+                    message = (
+                        f"Привет, {serialized['first_name']}! 🌟\n\n"
+                        f"Тебе назначена новая задача:\n"
+                        f"<b>{serialized['task_name']}</b>\n"
+                        f"Описание: {serialized['task_description']}\n"
+                        f"Группа задачи: {serialized['task_group_name']}\n"
+                        f"Начало: {serialized['task_start_time']}\n"
+                        f"Окончание: {serialized['task_end_time']}\n"
+                        f"Длительность: {serialized['task_duration']} часов.\n"
                     )
-                elif serialized.get("match_type") == "5x5":
-                    print('res', serialized.get("match_result"))
-                    if serialized.get("match_result") == "win":
-                        message = (
-                            f"<b>Поздравляем с победой!</b>\n\n"
-                            f"<b>Матч:</b> {serialized['team_name']} против {serialized['opp_team_name']}\n"
-                            f"<b>Счет:</b> {serialized['team_score']} - {serialized['opp_team_score']}\n"
-                            f"<b>Ваша команда:</b> {', '.join(serialized['team_players'])}\n"
-                            f"<b>Команда противника:</b> {', '.join(serialized['opp_team_players'])}\n"
-                        )
-                    elif serialized.get("match_result") == "lose":
-                        message = (
-                            f"<b>Не унывайте, впереди новые матчи!</b>\n\n"
-                            f"<b>Матч:</b> {serialized['team_name']} против {serialized['opp_team_name']}\n"
-                            f"<b>Счет:</b> {serialized['team_score']} - {serialized['opp_team_score']}\n"
-                            f"<b>Ваша команда:</b> {', '.join(serialized['team_players'])}\n"
-                            f"<b>Команда противника:</b> {', '.join(serialized['opp_team_players'])}\n"
-                        )
-                    else:
-                        message = "<b>Произошла ошибка в обработке результатов матча.</b>"
-                    print(message)
-                    await bot.send_message(
-                        chat_id=int(telegram_id),
-                        text=message,
-                        parse_mode="HTML"
+                elif serialized.get("task_type") == "deadline_approaching":
+                    message = (
+                        f"⚠️ Внимание, {serialized['first_name']}!\n\n"
+                        f"Срок выполнения задачи <b>{serialized['task_name']}</b> скоро истекает!\n"
+                        f"Убедись, что все идет по плану. Осталось не так много времени.\n"
                     )
+                elif serialized.get("task_type") == "task_started_no_activity":
+                    message = (
+                        f"⏳ {serialized['first_name']}, кажется ты еще не начал работу над задачей <b>{serialized['task_name']}</b>, которая уже началась!\n"
+                        f"Пожалуйста, начни выполнение как можно скорее и обрати внимание на сроки.\n"
+                    )
+
+                if message:
+                    await bot.send_message(chat_id=int(telegram_id), text=message, parse_mode="HTML")
     finally:
         await consumer.stop()
 
