@@ -1,6 +1,6 @@
 from fastapi.templating import Jinja2Templates
 
-from task.models import UserTask
+from task.models import UserTask, Task, Group
 
 templates = Jinja2Templates(directory="templates")
 
@@ -214,33 +214,30 @@ async def get_object_images(
 #         }
 
 
-# def create_team_data(
-#     team, opponent_team, match_result, player_score, opponent_score
-# ):
-#     return {
-#         "match_type": "5x5",
-#         "team_name": team.name,
-#         "opp_team_name": opponent_team.name,
-#         "team_players": [player.nickname for player in team.players],
-#         "opp_team_players": [
-#             player.nickname for player in opponent_team.players
-#         ],
-#         "team_score": player_score,
-#         "opp_team_score": opponent_score,
-#         "match_result": match_result,
-#     }
-#
-#
-# async def prepare_data_mailing(
-#     player, team, opponent_team, result, score, opponent_score, redis
-# ) -> Dict:
-#     if await redis.smembers(f"auth:{player.tg_id}"):
-#         return {
-#             str(player.tg_id): create_team_data(
-#                 team, opponent_team, result, score, opponent_score
-#             )
-#         }
-#     return {}
+def create_task_data(
+    user: User, task: Task, group: Group
+):
+    return {
+        "first_name": user.first_name,
+        "task_duration": task.duration,
+        "task_name": task.name,
+        "task_description": task.description,
+        "task_start_time": task.added_at,
+        "task_end_time": task.done_at,
+        "task_group_name": group.name,
+    }
+
+
+async def prepare_data_mailing(
+    user, team, opponent_team, result, score, opponent_score, redis
+) -> Dict:
+    if await redis.smembers(f"auth:{user.tg_id}"):
+        return {
+            str(player.tg_id): create_task_data(
+                team, opponent_team, result, score, opponent_score
+            )
+        }
+    return {}
 
 
 async def update_object(

@@ -21,7 +21,7 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     last_name: Mapped[str]
     role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), default=1)
     role: Mapped["Role"] = relationship(
-        back_populates="users", uselist=False
+        back_populates="users", uselist=False, lazy="joined"
     )
     email: Mapped[str]
     is_email_confirmed: Mapped[bool] = mapped_column(default=False)
@@ -36,14 +36,14 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     is_verified: Mapped[bool] = mapped_column(default=True)
     tg_id: Mapped[str] = mapped_column(String(20), nullable=True, unique=True)
     tg_settings: Mapped[dict] = mapped_column(JSON, nullable=True)
-    tasks = relationship("Task", back_populates="assignees", uselist=True, secondary="user_task")
+    tasks = relationship("Task", back_populates="assignees", uselist=True, secondary="user_task", lazy="joined")
     organization_id: Mapped[int] = mapped_column(ForeignKey("organization.id"), nullable=True)
-    organization = relationship("Organization", back_populates="staff", uselist=False)
+    organization = relationship("Organization", back_populates="staff", uselist=False, lazy="joined")
     pathfile: Mapped[str] = mapped_column(nullable=True)
     oauth_accounts: Mapped[List[OAuthAccount]] = relationship(
         "OAuthAccount", lazy="joined"
     )
-    groups: Mapped[List["Group"]] = relationship("Group", uselist=True, back_populates="user")
+    groups: Mapped[List["Group"]] = relationship("Group", uselist=True, back_populates="user", lazy="joined")
     github_name: Mapped[str] = mapped_column(nullable=True)
 
 

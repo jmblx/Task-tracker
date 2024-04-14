@@ -58,6 +58,7 @@ class TaskUpdate(BaseModel):
     project_id: Optional[int] = None
     group_id: Optional[int] = None
 
+
     class Config:
         from_attributes = True
         arbitrary_types_allowed = True
