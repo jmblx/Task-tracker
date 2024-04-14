@@ -1,0 +1,18 @@
+/* TimerComponent.module.css */
+
+.timerContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Additional styles to match the design in the provided image */
+}
+
+.time {
+    font-size: 2em;
+    /* Additional styles to match the design in the provided image */
+}
+
+.timerControls {
+    /* Styles for the control buttons */
+}

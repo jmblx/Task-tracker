@@ -1,0 +1,139 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modalContent {
+    background: #000000;
+    color: #FFFFFF;
+    padding: 20px;
+    font-weight: 500;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    width: auto;
+}
+
+.modalCloseBtn {
+    float: right;
+    cursor: pointer;
+}
+
+.modalInputContainer {
+    text-align: center;
+    align-items: center;
+    margin: auto;
+}
+
+.modalInput {
+    border-radius: 5px;
+    border: 1px solid #7f7f7f;
+    padding: 10px;
+    width: 100%;
+    margin: 0;
+    color: #FFFFFF;
+    background-color: #000000;
+    box-sizing: border-box;
+}
+
+.modalInputId {
+    border-radius: 5px;
+    border: 1px solid #7f7f7f;
+    padding: 10px;
+    margin: 10px;
+    color: #FFFFFF;
+    background-color: #000000;
+    box-sizing: border-box;
+}
+
+.modalTitle {
+    text-align: left;
+}
+
+.modalMember {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    border: 1px solid #FFF;
+    border-radius: 5px;
+    margin: 10px 0 10px 0;
+}
+
+.modalMember img {
+    width: 50px;
+    height: 50px;
+    margin-left: 10px;
+}
+
+.modalSelectContainer {
+    display: flex;
+    text-align: right;
+    margin-left: auto;
+}
+
+.modalSelect {
+    background-color: #000000;
+    color: #FFFFFF;
+    border: none;
+    cursor: pointer;
+}
+
+.modalImg {
+    width: 25px;
+    height: 25px;
+    margin-left: 5px;
+}
+
+.modalInsertId {
+    text-align: left;
+    border: 1px solid #FFF;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.modalInsertIdTitle {
+    display: flex;
+    align-items: center;
+}
+
+.modalInsertIdTitle h2 {
+    margin-left: 10px;
+}
+
+.modalInsertIdText {
+    text-align: center;
+    font-size: 15px;
+}
+
+.modalCreateProject {
+    text-align: center;
+}
+
+.modalCreateProject span {
+     text-decoration: underline;
+}
+
+.modalBtn {
+    background-color: #9FBAFF;
+    width: auto;
+    color: #FFFFFF;
+    border-radius: 12px;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.instruction {
+    color: #FFFFFF;
+}
+
+.instruction:active:visited {
+    color: #9FBAFF;
+}

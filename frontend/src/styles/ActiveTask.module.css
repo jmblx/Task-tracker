@@ -1,0 +1,44 @@
+.task {
+    border: 1px solid #fff;
+    width: 220px;
+    border-radius: 10px;
+    height: auto;
+    margin: auto;
+    color: #FFFFFF;
+    padding: 5px;
+    text-align: center;
+}
+
+.nextTask {
+    width: 50px;
+    height: 50px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.containerTask {
+    display: flex;
+    justify-content: right;
+}
+
+.taskTime {
+
+}
+
+.stopTask {
+    width: 25px;
+    height: 25px;
+}
+
+.taskButtons button {
+    border: 1px solid #353535;
+    background-color: #171717;
+    color: #FFFFFF;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.buttonEndTask {
+}

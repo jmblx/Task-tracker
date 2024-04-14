@@ -1,0 +1,52 @@
+.projectsContainer {
+    text-align: center;
+    width: 900px;
+    margin: auto;
+}
+
+.footnote {
+    margin: 10px 0 10px 0;
+    display: flex;
+    align-self: start;
+}
+
+.title {
+    margin: 0;
+    font-weight: 500;
+    text-align: left;
+}
+
+.containerButtons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 10px;
+}
+
+.containerButtons button {
+    background-color: #63749F;
+    border: none;
+    color: #FFFFFF;
+    width: 10%;
+    padding: 7px;
+    border-radius: 10px;
+}
+
+.listProjectsContainer {
+    display: flex;
+    padding: 2px;
+    font-weight: 600;
+    border: 1px solid #999;
+    align-items: center;
+    border-radius: 15px;
+    justify-content: space-around;
+    font-size: 18px;
+}
+
+.activeProjectContainer {
+    color: #148714;
+}
+
+.listProjectsContainer span {
+    font-size: 25px;
+}
