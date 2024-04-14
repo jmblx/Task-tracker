@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, UUID4
 
 
+
 class TaskBase:
     name: Optional[str] = None
     description: Optional[str] = None
@@ -23,8 +24,8 @@ class TaskSchema(TaskBase, BaseModel):
     id: int
     description: str
     is_done: bool
-    added_at: datetime.datetime
-    done_at: Optional[datetime.datetime]
+    added_at: Optional[datetime.datetime] = None
+    done_at: Optional[datetime.datetime] = None
     color: str
     difficulty: str
 

@@ -15,11 +15,12 @@ from database import async_session_maker
 from gql_types import UserReadType, UserUpdateType, UserType, UserFindType, OrganizationFindType, OrganizationType, \
     OrganizationCreateType, \
     ProjectCreateType, ProjectFindType, ProjectType, OrganizationUpdateType, ProjectUpdateType, TaskFindType, TaskType, \
-    TaskCreateType, TaskUpdateType, TaskReadType
+    TaskCreateType, TaskUpdateType, TaskReadType, GroupUpdateType, GroupCreateType, GroupFindType, GroupType
 from organization.models import Organization
 from project.models import Project
 from project.schemas import ProjectRead
-from task.models import Task
+from task.group_schemas import GroupRead
+from task.models import Task, Group
 
 from utils import find_obj, insert_obj, update_object, insert_task
 
@@ -45,7 +46,8 @@ class Query:
             Organization,
             validated_search_data,
             options=[
-                joinedload(Organization.staff).joinedload(User.role)
+                joinedload(Organization.staff).joinedload(User.role),
+                joinedload(Organization.projects).joinedload(Project.tasks)
             ]
         )
         if organization:
@@ -57,7 +59,8 @@ class Query:
                 name=organization.name,
                 description=organization.description,
                 workers=[UserReadType.from_pydantic(user) for user in workers],
-                managers=[UserReadType.from_pydantic(user) for user in managers]
+                managers=[UserReadType.from_pydantic(user) for user in managers],
+                projects=[ProjectType.from_pydantic(project) for project in organization.projects],
             )
         else:
             return None
@@ -70,8 +73,12 @@ class Query:
         for key, value in search_data.items():
             if value is not None:
                 validated_search_data[key] = value
-        data = await find_obj(Project, validated_search_data)
+        data = await find_obj(
+            Project, validated_search_data, [joinedload(Project.tasks), joinedload(Project.organization)]
+        )
         data = ProjectRead.from_orm(data)
+        data = ProjectType.from_pydantic(data)
+
         return data
 
     @strawberry.field
@@ -86,6 +93,21 @@ class Query:
             data = TaskRead.from_orm(data)
             data = TaskReadType.from_pydantic(data)
             return data
+
+    @strawberry.field
+    async def get_group(self, search_data: GroupFindType) -> GroupType:
+        async with async_session_maker() as session:
+            query = select(Group).filter_by(**{k: v for k, v in search_data.__dict__.items() if v is not None})
+            query = query.options(joinedload(Group.tasks), joinedload(Group.user).joinedload(User.role),
+                                  joinedload(Group.user).joinedload(User.tasks))
+            data = await session.execute(query)
+            group = data.scalars().first()
+
+        if group:
+            group = GroupRead.from_orm(group)
+            return GroupType.from_pydantic(group)
+        else:
+            raise LookupError("Group not found")
 
 
 @strawberry.type
@@ -166,6 +188,21 @@ class Mutation:
             task.duration -= timedelta(seconds=seconds)
             await session.commit()
             return True
+
+    @strawberry.mutation
+    async def add_group(self, data: GroupCreateType) -> int:
+        search_data = data.to_pydantic().model_dump()
+        obj_id = await insert_obj(Group, search_data)
+        return obj_id
+
+    @strawberry.mutation
+    async def update_group(self, id: int, data: GroupUpdateType) -> bool:
+        await update_object(
+            data.to_pydantic(),
+            Group,
+            id
+        )
+        return True
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

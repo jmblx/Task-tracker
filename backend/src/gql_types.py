@@ -4,6 +4,7 @@ from uuid import UUID
 import strawberry
 
 from auth.task_read_schema import TaskRead
+from task.group_schemas import GroupFind, GroupUpdate, GroupCreate, GroupRead
 from task.schemas import TaskUpdate, TaskFind, TaskSchema
 from auth.schemas import UserRead, UserFind, UserUpdate, UserSchema, RoleRead, UserCreate
 from organization.schemas import (
@@ -23,6 +24,18 @@ class UserAssigneeType:
 @strawberry.experimental.pydantic.type(model=RoleRead, fields=["id", "name"])
 class RoleReadType:
     permissions: strawberry.scalars.JSON
+@strawberry.experimental.pydantic.type(model=TaskSchema, fields=[
+    'id', 'name', 'description', 'is_done', 'added_at', 'done_at',
+    'color', 'difficulty', 'project_id', 'group_id'])
+class TaskType:
+    duration: Optional[Duration] = strawberry.field(description="The duration of the task in seconds.")
+
+@strawberry.experimental.pydantic.type(model=ProjectRead, all_fields=True)
+class ProjectType:
+    pass
+
+
+
 
 
 @strawberry.experimental.pydantic.input(model=UserFind, fields=[
@@ -75,13 +88,6 @@ class OrganizationUpdateType:
     pass
 
 
-@strawberry.experimental.pydantic.type(model=TaskSchema, fields=[
-    'id', 'name', 'description', 'is_done', 'added_at', 'done_at',
-    'color', 'difficulty', 'project_id', 'group_id'])
-class TaskType:
-    duration: Optional[Duration] = strawberry.field(description="The duration of the task in seconds.")
-
-
 @strawberry.experimental.pydantic.input(model=TaskFind, all_fields=True)
 class TaskFindType:
     pass
@@ -132,8 +138,19 @@ class UserType:
     tasks: List[TaskType]
 
 
-@strawberry.experimental.pydantic.type(model=ProjectRead, all_fields=True)
-class ProjectType:
+
+@strawberry.experimental.pydantic.input(model=ProjectFind, all_fields=True)
+class ProjectFindType:
+    pass
+
+
+@strawberry.experimental.pydantic.input(model=ProjectCreate, all_fields=True)
+class ProjectCreateType:
+    pass
+
+
+@strawberry.experimental.pydantic.input(model=ProjectUpdate, all_fields=True)
+class ProjectUpdateType:
     pass
 
 
@@ -150,6 +167,27 @@ class ProjectCreateType:
 @strawberry.experimental.pydantic.input(model=ProjectUpdate, all_fields=True)
 class ProjectUpdateType:
     pass
+
+
+@strawberry.experimental.pydantic.type(model=GroupRead, all_fields=True)
+class GroupType:
+    pass
+
+
+@strawberry.experimental.pydantic.input(model=GroupFind, all_fields=True)
+class GroupFindType:
+    pass
+
+
+@strawberry.experimental.pydantic.input(model=GroupCreate, all_fields=True)
+class GroupCreateType:
+    pass
+
+
+@strawberry.experimental.pydantic.input(model=GroupUpdate, all_fields=True)
+class GroupUpdateType:
+    pass
+
 
 # class TaskReadSchema:
 #     id: int = Field(int)

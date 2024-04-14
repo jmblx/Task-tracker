@@ -2,7 +2,7 @@ import datetime
 from typing import Optional, List
 
 from pydantic import BaseModel
-
+from task.schemas import TaskSchema
 
 
 class ProjectRead(BaseModel):
@@ -12,7 +12,7 @@ class ProjectRead(BaseModel):
     created_at: datetime.datetime
     organization_id: int
     asana_id: str
-    # tasks: List["TaskRead"]
+    tasks: Optional[List["TaskSchema"]] = None
 
     class Config:
         from_attributes = True
