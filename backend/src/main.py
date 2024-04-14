@@ -15,6 +15,7 @@ from auth.schemas import UserRead, UserCreate, UserUpdate
 from config import SECRET_AUTH
 from graphql_schema import schema
 from user_data.router import router as profile_router
+from integration.multiple_tasks import router as asana_router
 
 app = FastAPI(title="requests proceed API")
 
@@ -66,6 +67,7 @@ app.include_router(
 
 app.include_router(auth_router)
 app.include_router(profile_router)
+app.include_router(asana_router)
 
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")

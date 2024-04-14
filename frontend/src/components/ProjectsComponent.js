@@ -17,7 +17,7 @@ const ProjectsComponent = () => {
                     <p>#1</p>
                     <p>Принять душ</p>
                     <p className={styles.activeProjectContainer}>Active</p>
-                    <p><span>Members:</span> Zorenko Konstantin, Podpivasnick, Meff...</p>
+                    <p><span>Members:</span> Zorenko Konstantin</p>
                 </div>
             </div>
         </>

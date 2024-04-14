@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "tg-bot"
+version = "0.1.0"
+description = ""
+authors = ["CoSm1C AvEnGeR <zhora.zhilin.06@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aiogram = "^3.4.1"
+python-dotenv = "^1.0.1"
+redis = "^5.0.3"
+aiokafka = "^0.10.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
