@@ -13,7 +13,7 @@ from auth.base_config import (
 from auth.custom_auth_router import router as auth_router
 from auth.schemas import UserRead, UserCreate, UserUpdate
 from speech_task.router import router as speech_task_router
-from config import SECRET_AUTH, REDIS_HOST, REDIS_PORT
+from config import SECRET_AUTH
 from graphql_schema import schema
 from user_data.router import router as profile_router
 from integration.multiple_tasks import router as asana_router
