@@ -12,6 +12,7 @@ from auth.base_config import (
 )
 from auth.custom_auth_router import router as auth_router
 from auth.schemas import UserRead, UserCreate, UserUpdate
+from speech_task.router import router as speech_task_router
 from config import SECRET_AUTH, REDIS_HOST, REDIS_PORT
 from graphql_schema import schema
 from user_data.router import router as profile_router
@@ -68,6 +69,7 @@ app.include_router(
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(asana_router)
+app.include_router(speech_task_router)
 
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
@@ -86,10 +88,12 @@ app.add_middleware(
     ],
 )
 
+
 @app.on_event("startup")
 async def startup_event():
-    redis = aioredis.from_url(
-        f"redis://{REDIS_HOST}:{REDIS_PORT}",
-        encoding="utf8",
-        decode_responses=True,
-    )
+    # redis = aioredis.from_url(
+    #     f"redis://{REDIS_HOST}:{REDIS_PORT}",
+    #     encoding="utf8",
+    #     decode_responses=True,
+    # )
+    pass

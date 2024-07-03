@@ -49,8 +49,8 @@ class TaskUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     is_done: Optional[bool] = None
-    added_at: Optional[datetime] = None
-    done_at: Optional[datetime] = None
+    added_at: Optional[datetime.datetime] = None
+    done_at: Optional[datetime.datetime] = None
     assigner_id: Optional[UUID4] = None
     color: Optional[str] = None
     duration: Optional[datetime.timedelta] = Field(default_factory=datetime.timedelta)

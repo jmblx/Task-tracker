@@ -24,18 +24,18 @@ class UserAssigneeType:
 @strawberry.experimental.pydantic.type(model=RoleRead, fields=["id", "name"])
 class RoleReadType:
     permissions: strawberry.scalars.JSON
+
+
 @strawberry.experimental.pydantic.type(model=TaskSchema, fields=[
     'id', 'name', 'description', 'is_done', 'added_at', 'done_at',
     'color', 'difficulty', 'project_id', 'group_id'])
 class TaskType:
     duration: Optional[Duration] = strawberry.field(description="The duration of the task in seconds.")
 
+
 @strawberry.experimental.pydantic.type(model=ProjectRead, all_fields=True)
 class ProjectType:
     pass
-
-
-
 
 
 @strawberry.experimental.pydantic.input(model=UserFind, fields=[
@@ -136,22 +136,6 @@ class UserType:
     tg_settings: strawberry.scalars.JSON
     role: Optional[RoleReadType]
     tasks: List[TaskType]
-
-
-
-@strawberry.experimental.pydantic.input(model=ProjectFind, all_fields=True)
-class ProjectFindType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=ProjectCreate, all_fields=True)
-class ProjectCreateType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=ProjectUpdate, all_fields=True)
-class ProjectUpdateType:
-    pass
 
 
 @strawberry.experimental.pydantic.input(model=ProjectFind, all_fields=True)

@@ -25,6 +25,11 @@ pendulum = "^3.0.0"
 gunicorn = "^21.2.0"
 redis = "^5.0.3"
 aiokafka = "^0.10.0"
+python-multipart = "^0.0.9"
+groq = "^0.8.0"
+pyjwt = "^2.8.0"
+ffmpeg-python = "^0.2.0"
+pydub = "^0.25.1"
 
 
 [build-system]

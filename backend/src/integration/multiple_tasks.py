@@ -17,9 +17,6 @@ from fastapi import APIRouter
 router = APIRouter(prefix='/project')
 
 
-
-
-
 def make_naive(dt):
     if dt is not None:
         return dt.replace(tzinfo=None)  # Преобразование aware datetime в naive datetime

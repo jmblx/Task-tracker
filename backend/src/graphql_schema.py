@@ -86,14 +86,21 @@ class Query:
     async def get_task(self, search_data: TaskFindType) -> TaskReadType:
         search_data = search_data.to_pydantic().model_dump()
         validated_search_data = {k: v for k, v in search_data.items() if v is not None}
-        data = await find_obj(Task, validated_search_data, [
-            joinedload(Task.assignees).joinedload(User.role),
-        ])
+
         async with async_session_maker() as session:
-            data.assigner = (await session.execute(select(User).where(User.id == data.assigner_id).options(joinedload(User.role)))).unique().scalar()
-            data = TaskRead.from_orm(data)
-            data = TaskReadType.from_pydantic(data)
-            return data
+            query = select(Task).filter_by(**validated_search_data).options(
+                joinedload(Task.assignees).joinedload(User.tasks),
+                joinedload(Task.assigner).joinedload(User.tasks),
+            )
+            task_result = await session.execute(query)
+            task = task_result.scalars().first()
+            if task:
+                print(task.__dict__)
+                task_data = TaskRead.from_orm(task)
+                result = TaskReadType.from_pydantic(task_data)
+                return result
+            else:
+                raise ValueError("Задача не найдена")
 
     @strawberry.field
     async def get_group(self, search_data: GroupFindType) -> GroupType:
@@ -167,8 +174,9 @@ class Mutation:
             'group_id': data.group_id,
         }
 
-        obj_id = await insert_task(Task, task_data,
-                                   [assignee.__dict__ for assignee in data.assignees] if data.assignees else [])
+        obj_id = await insert_task(
+            Task, task_data, [assignee.__dict__ for assignee in data.assignees] if data.assignees else []
+        )
 
 
         return obj_id

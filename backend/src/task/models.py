@@ -35,6 +35,11 @@ class Task(Base):
         secondary="user_task",
     )
     assigner_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=True)
+    assigner = relationship(
+        "User",
+        back_populates="task_created",
+        uselist=False,
+    )
     color: Mapped[str]
     duration = mapped_column(Interval)
     difficulty: Mapped[Difficulty] = mapped_column(nullable=True)
