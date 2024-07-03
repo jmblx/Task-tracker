@@ -74,6 +74,22 @@ class RoleSchema(BaseModel):
     name: str
     permissions: Dict[str, Any]
 
+    class Config:
+        from_attributes = True
+
+
+class RoleUpdate(BaseModel):
+    name: Optional[str] = None
+    permissions: Optional[Dict[str, Any]] = None
+
+
+class RoleFind(BaseModel):
+    id: Optional[int] = None
+    name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 
 class RoleRead(RoleSchema):
     id: int

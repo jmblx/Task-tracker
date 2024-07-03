@@ -6,7 +6,8 @@ import strawberry
 from auth.task_read_schema import TaskRead
 from task.group_schemas import GroupFind, GroupUpdate, GroupCreate, GroupRead
 from task.schemas import TaskUpdate, TaskFind, TaskSchema
-from auth.schemas import UserRead, UserFind, UserUpdate, UserSchema, RoleRead, UserCreate
+from auth.schemas import UserRead, UserFind, UserUpdate, UserSchema, RoleRead, UserCreate, RoleSchema, RoleUpdate, \
+    RoleFind
 from organization.schemas import (
     OrganizationRead, OrganizationFind, OrganizationCreate, OrganizationUpdate
 )
@@ -23,6 +24,21 @@ class UserAssigneeType:
 
 @strawberry.experimental.pydantic.type(model=RoleRead, fields=["id", "name"])
 class RoleReadType:
+    permissions: strawberry.scalars.JSON
+
+
+@strawberry.experimental.pydantic.input(model=RoleFind, fields=["id", "name"])
+class RoleFindType:
+    pass
+
+
+@strawberry.experimental.pydantic.input(model=RoleUpdate, fields=["name"])
+class RoleUpdateType:
+    permissions: Optional[strawberry.scalars.JSON]
+
+
+@strawberry.experimental.pydantic.input(model=RoleSchema, fields=["name"])
+class RoleCreateType:
     permissions: strawberry.scalars.JSON
 
 

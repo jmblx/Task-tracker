@@ -7,16 +7,17 @@ from fastapi_users.authentication.strategy import redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_session
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql.functions import user
 
-
-from auth.models import User
-from auth.schemas import UserRead
+from auth.models import User, Role
+from auth.schemas import UserRead, RoleRead
 from auth.task_read_schema import TaskRead
 from database import async_session_maker
 from gql_types import UserReadType, UserUpdateType, UserType, UserFindType, OrganizationFindType, OrganizationType, \
     OrganizationCreateType, \
     ProjectCreateType, ProjectFindType, ProjectType, OrganizationUpdateType, ProjectUpdateType, TaskFindType, TaskType, \
-    TaskCreateType, TaskUpdateType, TaskReadType, GroupUpdateType, GroupCreateType, GroupFindType, GroupType
+    TaskCreateType, TaskUpdateType, TaskReadType, GroupUpdateType, GroupCreateType, GroupFindType, GroupType, \
+    RoleCreateType, RoleUpdateType, RoleFindType, RoleReadType
 from organization.models import Organization
 from project.models import Project
 from project.schemas import ProjectRead
@@ -28,6 +29,16 @@ from utils import find_obj, insert_obj, update_object, insert_task, prepare_data
 
 @strawberry.type
 class Query:
+    @strawberry.field
+    async def get_role(self, search_data: RoleFindType) -> Optional[RoleReadType]:
+        validated_search_data = search_data.to_pydantic().dict(exclude_none=True)
+        role = await find_obj(Role, validated_search_data)
+
+        if role:
+            role_data = RoleRead.from_orm(role)
+            return RoleReadType.from_pydantic(role_data)
+        else:
+            return None
 
     @strawberry.field
     async def get_user(self, search_data: UserFindType) -> Optional[UserType]:
@@ -120,6 +131,21 @@ class Query:
 
 @strawberry.type
 class Mutation:
+
+    @strawberry.mutation
+    async def add_role(self, data: RoleCreateType) -> int:
+        data = data.to_pydantic().model_dump()
+        obj_id = await insert_obj(Role, data)
+        return obj_id
+
+    @strawberry.mutation
+    async def update_role(self, item_id: int, data: RoleUpdateType) -> bool:
+        await update_object(
+            data.to_pydantic(),
+            Role,
+            item_id
+        )
+        return True
 
     @strawberry.mutation
     async def update_user(self, id: strawberry.ID, data: UserUpdateType) -> bool:

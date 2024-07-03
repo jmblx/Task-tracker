@@ -18,16 +18,9 @@ from auth.schemas import RoleSchema
 from constants import IMAGES_DIR
 from database import get_async_session
 from user_data.schemas import LinkTG
-from utils import create_upload_avatar, get_user_attrs
+from utils import create_upload_avatar
 
 router = fastapi.APIRouter(prefix="/profile", tags=["user-profile"])
-
-
-@router.get("/")
-async def get_user_data(
-    user: User = Depends(current_user),
-):
-    return await get_user_attrs(user)
 
 
 @router.post("/uploadfile/avatar/{user_id}")
