@@ -6,8 +6,9 @@ import strawberry
 from fastapi_users.authentication.strategy import redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_session
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql.functions import user
+from strawberry import Info
 
 from auth.models import User, Role
 from auth.schemas import UserRead, RoleRead
@@ -21,6 +22,7 @@ from gql_types import UserReadType, UserUpdateType, UserType, UserFindType, Orga
 from organization.models import Organization
 from project.models import Project
 from project.schemas import ProjectRead
+from scalars import DateTime, Duration
 from task.group_schemas import GroupRead
 from task.models import Task, Group
 
@@ -40,16 +42,40 @@ class Query:
         else:
             return None
 
+    # @strawberry.field
+    # async def get_user(self, search_data: UserFindType) -> Optional[UserType]:
+    #     validated_search_data = search_data.to_pydantic().dict(exclude_none=True)
+    #     user = await find_obj(User, validated_search_data, [joinedload(User.role), joinedload(User.tasks)])
+    #
+    #     if user:
+    #         user_data = UserRead.from_orm(user)
+    #         return UserType.from_pydantic(user_data)
+    #     else:
+    #         return None
     @strawberry.field
-    async def get_user(self, search_data: UserFindType) -> Optional[UserType]:
-        validated_search_data = search_data.to_pydantic().dict(exclude_none=True)
-        user = await find_obj(User, validated_search_data, [joinedload(User.role), joinedload(User.tasks)])
-
+    async def get_user(self, info: Info, search_data: UserFindType) -> Optional[UserType]:
+        db = info.context["db"]
+        user = await db.execute(select(User).filter_by(**search_data.to_pydantic().model_dump(exclude_none=True)))
+        user = user.scalars().first()
         if user:
-            user_data = UserRead.from_orm(user)
+            user_data = UserRead(
+                id=user.id,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                email=user.email,
+                is_active=user.is_active,
+                is_superuser=user.is_superuser,
+                is_verified=user.is_verified,
+                registered_at=user.registered_at,
+                role_id=user.role_id,
+                pathfile=user.pathfile,
+                tg_id=user.tg_id,
+                tg_settings=user.tg_settings,
+                organization_id=user.organization_id,
+                is_email_confirmed=user.is_email_confirmed,
+            )
             return UserType.from_pydantic(user_data)
-        else:
-            return None
+        return None
 
     @strawberry.field
     async def get_organization(self, search_data: OrganizationFindType) -> Optional[OrganizationType]:
@@ -244,4 +270,4 @@ class Mutation:
         return True
 
 
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+schema = strawberry.Schema(query=Query, mutation=Mutation, types=[Duration, DateTime])

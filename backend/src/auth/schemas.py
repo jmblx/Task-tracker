@@ -113,8 +113,8 @@ class UserRead(BaseModel):
     tg_settings: Optional[dict] = None
     organization_id: Optional[int] = None
     is_email_confirmed: bool
-    role: RoleRead
+    role: Optional[RoleRead] = None
     tasks: Optional[List["TaskSchema"]] = None
 
     class Config:
-        from_attributes=True
+        from_attributes = True

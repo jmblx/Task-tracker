@@ -2,7 +2,10 @@ from typing import Optional, List
 from uuid import UUID
 
 import strawberry
+from sqlalchemy.orm import joinedload
+from strawberry import Info
 
+from auth.models import User
 from auth.task_read_schema import TaskRead
 from task.group_schemas import GroupFind, GroupUpdate, GroupCreate, GroupRead
 from task.schemas import TaskUpdate, TaskFind, TaskSchema
@@ -13,6 +16,7 @@ from organization.schemas import (
 )
 from project.schemas import ProjectFind, ProjectRead, ProjectCreate, ProjectUpdate
 from scalars import DateTime, Duration
+from utils import find_obj
 
 
 @strawberry.input
@@ -46,7 +50,8 @@ class RoleCreateType:
     'id', 'name', 'description', 'is_done', 'added_at', 'done_at',
     'color', 'difficulty', 'project_id', 'group_id'])
 class TaskType:
-    duration: Optional[Duration] = strawberry.field(description="The duration of the task in seconds.")
+    duration: Duration
+    assignees: List["UserType"]
 
 
 @strawberry.experimental.pydantic.type(model=ProjectRead, all_fields=True)
@@ -61,13 +66,39 @@ class UserFindType:
     pass
 
 
+# @strawberry.experimental.pydantic.type(model=UserRead, fields=[
+#     'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
+#     'is_verified', 'pathfile', 'role', 'tg_id', 'id', "tasks"
+# ])
+# class UserType:
+#     # Используем strawberry.scalars.JSON для tg_settings
+#     tg_settings: Optional[strawberry.scalars.JSON]
+
 @strawberry.experimental.pydantic.type(model=UserRead, fields=[
     'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
-    'is_verified', 'pathfile', 'role', 'tg_id', 'id'
+    'is_verified', 'pathfile', 'tg_id', 'id', "tasks"
 ])
-class UserReadType:
-    # Используем strawberry.scalars.JSON для tg_settings
-    tg_settings: Optional[strawberry.scalars.JSON]
+class UserType:
+    @strawberry.field
+    async def role(self, info: Info) -> Optional[RoleReadType]:
+        role_loader = info.context["role_loader"]
+        user = await info.context["user_loader"].load(self.id)
+        if user and user.role_id:
+            role = await role_loader.load(user.role_id)
+            return RoleReadType.from_pydantic(role)
+        return None
+
+    @strawberry.field
+    async def tasks(self, info: Info) -> List["TaskType"]:
+        task_loader = info.context["task_loader"]
+        tasks = await task_loader.load(self.id)
+        return [TaskType.from_pydantic(TaskRead.from_orm(task)) for task in tasks]
+
+    @strawberry.field
+    async def tasks_assigned(self, info: Info) -> List[TaskType]:
+        task_loader = info.context["task_loader"]
+        tasks = await task_loader.load(self.id, is_assigned=True)
+        return [TaskType.from_pydantic(task) for task in tasks]
 
 
 @strawberry.experimental.pydantic.type(model=UserCreate, fields=[
@@ -148,10 +179,10 @@ class TaskDecreaseTime:
     'is_verified', 'pathfile', 'tg_id', 'organization_id',
     'is_email_confirmed', 'registered_at'
 ])
-class UserType:
+class UserReadType:
     tg_settings: strawberry.scalars.JSON
     role: Optional[RoleReadType]
-    tasks: List[TaskType]
+    tasks: Optional[List[TaskType]]
 
 
 @strawberry.experimental.pydantic.input(model=ProjectFind, all_fields=True)

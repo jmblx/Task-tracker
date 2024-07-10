@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, List, Any, Dict
+from typing import Optional, Any, Dict
 from uuid import UUID
 
 from pydantic import BaseModel, Field, UUID4
@@ -28,6 +28,7 @@ class TaskSchema(TaskBase, BaseModel):
     done_at: Optional[datetime.datetime] = None
     color: str
     difficulty: str
+    duration: Optional[datetime.timedelta] = None
 
     class Config:
         from_attributes = True

@@ -1,8 +1,9 @@
 import os
 
 import redis.asyncio as aioredis
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry.fastapi import GraphQLRouter
 
 from auth.base_config import (
@@ -12,6 +13,8 @@ from auth.base_config import (
 )
 from auth.custom_auth_router import router as auth_router
 from auth.schemas import UserRead, UserCreate, UserUpdate
+from database import get_async_session
+from loader import UserLoader, RoleLoader, TaskLoader
 from speech_task.router import router as speech_task_router
 from config import SECRET_AUTH
 from graphql_schema import schema
@@ -71,7 +74,17 @@ app.include_router(profile_router)
 app.include_router(asana_router)
 app.include_router(speech_task_router)
 
-graphql_app = GraphQLRouter(schema)
+async def get_context(
+    session: AsyncSession = Depends(get_async_session)
+):
+    return {
+        "db": session,
+        "user_loader": UserLoader(session),
+        "role_loader": RoleLoader(session),
+        "task_loader": TaskLoader(session)
+    }
+
+graphql_app = GraphQLRouter(schema, context_getter=get_context)
 app.include_router(graphql_app, prefix="/graphql")
 
 origins = ["*"]

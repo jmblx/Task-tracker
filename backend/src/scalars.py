@@ -1,6 +1,7 @@
 import pendulum
 from pendulum import duration
 from datetime import datetime
+from datetime import timedelta
 from typing import Union
 
 import strawberry
@@ -32,16 +33,21 @@ DateTime = strawberry.scalar(
     parse_value=DateTime.parse_value,
 )
 
-from datetime import timedelta
 
-@strawberry.scalar(description="A time duration in seconds")
 class Duration:
     @staticmethod
     def serialize(value: timedelta) -> int:
-        # Преобразование timedelta в количество секунд
         return int(value.total_seconds())
 
     @staticmethod
     def parse_value(value: int) -> timedelta:
-        # Преобразование количества секунд обратно в timedelta
         return timedelta(seconds=value)
+
+
+Duration = strawberry.scalar(
+    timedelta,
+    name="Duration",
+    description="A time duration in seconds",
+    serialize=Duration.serialize,
+    parse_value=Duration.parse_value,
+)

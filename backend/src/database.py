@@ -3,6 +3,7 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from strawberry.extensions import Extension
 
 from config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
 
@@ -19,7 +20,14 @@ async_session_maker = sessionmaker(
 )
 
 
-# Функция создания асинхронных сессий
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
+
+
+class SQLAlchemySession(Extension):
+    async def on_request_start(self):
+        self.execution_context.context["db"] = await anext(get_async_session())
+
+    async def on_request_end(self):
+        pass
