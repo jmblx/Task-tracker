@@ -1,6 +1,10 @@
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import selectinload
+from strawberry import Info
 
 import config
+from organization.models import Organization
+from project.models import Project
 from task.models import UserTask, Task, Group
 
 templates = Jinja2Templates(directory="templates")
@@ -117,7 +121,7 @@ async def send_task_updates(data_mailing):
 
 
 async def update_object(
-    data: BaseModel,
+    data: dict,
     class_,
     obj_id: int,
     if_slug: bool = False,
@@ -126,7 +130,7 @@ async def update_object(
     async with async_session_maker() as session:
         update_data = {
             key: value
-            for key, value in data.model_dump().items()
+            for key, value in data.items()
             if value is not None
         }
         if if_slug:
@@ -147,14 +151,58 @@ async def update_object(
             await session.commit()
 
 
-async def find_obj(class_, data: dict, options=None):
+# async def find_obj(class_, data: dict, options=None):
+#     async with async_session_maker() as session:
+#         query = select(class_)
+#         for key, value in data.items():
+#             if value is not None:
+#                 query = query.where(getattr(class_, key) == value)
+#         if options:
+#             for option in options:
+#                 query = query.options(option)
+#         result = (await session.execute(query)).scalars().first()
+#         print(query)
+#         return result
+
+def get_load_options(selected_fields):
+    options = []
+    if 'role' in selected_fields:
+        options.append(selectinload(User.role))
+    if 'tasks' in selected_fields:
+        task_fields = selected_fields.get('tasks', {})
+        task_options = [selectinload(User.tasks)]
+        if 'assignees' in task_fields:
+            task_options.append(selectinload(Task.assignees))
+        options.extend(task_options)
+    return options
+
+
+async def find_obj(class_, data: dict, selected_fields, options=None):
     async with async_session_maker() as session:
-        query = select(class_).filter_by(**data)
+        query = select(class_)
+        for key, value in data.items():
+            if value is not None:
+                query = query.where(getattr(class_, key) == value)
+
+        load_options = get_load_options(selected_fields)
         if options:
-            for option in options:
-                query = query.options(option)
+            load_options.extend(options)
+
+        for option in load_options:
+            query = query.options(option)
+
         result = (await session.execute(query)).scalars().first()
         return result
+
+
+def get_selected_fields(info, field_name):
+    selected_fields = {}
+    for field in info.selected_fields:
+        if field.name == field_name:
+            for sub_field in field.selections:
+                selected_fields[sub_field.name] = get_selected_fields(info, sub_field.name)
+            break
+    return selected_fields
 
 
 async def insert_obj(class_, data: dict) -> int:
@@ -186,4 +234,3 @@ async def insert_task(class_, data: dict, assignees_data: List[Dict[str, Any]]) 
 
         await session.commit()
         return task_id
-
