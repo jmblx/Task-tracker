@@ -3,7 +3,7 @@ from datetime import timedelta
 from functools import wraps
 
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import selectinload, class_mapper, ColumnProperty, RelationshipProperty, load_only
+from sqlalchemy.orm import selectinload, class_mapper, ColumnProperty, RelationshipProperty, load_only, joinedload
 from strawberry import Info
 
 import config
@@ -331,8 +331,14 @@ def create_query_options(model: Any, fields: Dict[str, Any]) -> List:
     for field, subfields in fields.items():
         if field in relationship_fields:
             rel_model = relationship_fields[field]
-            sub_options = create_query_options(rel_model, subfields)
-            options.append(selectinload(getattr(model, field)).options(*sub_options))
+            field_type = get_type_hints(model).get(field, None)
+            if field_type and hasattr(field_type, '__origin__') and field_type.__origin__ == list:
+                sub_options = create_query_options(rel_model, subfields)
+                options.append(selectinload(getattr(model, field)).options(*sub_options))
+            else:
+                sub_options = create_query_options(rel_model, subfields)
+                options.append(joinedload(getattr(model, field)).options(*sub_options))
+
         elif field in physical_fields:
             options.append(load_only(getattr(model, field)))
 
