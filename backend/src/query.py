@@ -1,20 +1,15 @@
 from typing import Optional
-import re
 
 import strawberry
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload, load_only
 from strawberry import Info
 
 from auth.models import User, Role
+from gql_types import UserType, UserFindType, RoleType, RoleFindType, OrganizationType, \
+    OrganizationFindType, ProjectType, ProjectFindType, TaskType, TaskFindType, GroupType, GroupFindType
 from organization.models import Organization
 from project.models import Project
 from task.models import Task, Group
-from gql_types import UserType, UserFindType, RoleType, RoleFindType, OrganizationType, \
-    OrganizationFindType, ProjectType, ProjectFindType, TaskType, TaskFindType, GroupType, GroupFindType
-from utils import find_obj, get_selected_fields, extract_selected_fields, extract_model_name, \
-    get_model, get_model_fields, convert_dict_top_level_to_snake_case, create_query_options, \
-    strawberry_field_with_params
+from utils import strawberry_field_with_params
 
 
 @strawberry.type
