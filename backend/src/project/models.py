@@ -20,5 +20,5 @@ class Project(Base):
     )
     organization_id: Mapped[int] = mapped_column(ForeignKey("organization.id"))
     organization: Mapped["Organization"] = relationship("Organization", uselist=False, back_populates="projects")
-    asana_id: Mapped[str]
+    # asana_id: Mapped[str]
 

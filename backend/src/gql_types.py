@@ -1,233 +1,257 @@
-from typing import Optional, List
+from typing import Optional, List, get_type_hints
 from uuid import UUID
 
 import strawberry
-from sqlalchemy.orm import joinedload
-from strawberry import Info
+from strawberry import scalars
 
-from auth.models import User
-from auth.task_read_schema import TaskRead
-from task.group_schemas import GroupFind, GroupUpdate, GroupCreate, GroupRead
-from task.schemas import TaskUpdate, TaskFind, TaskSchema
-from auth.schemas import UserRead, UserFind, UserUpdate, UserSchema, RoleRead, UserCreate, RoleSchema, RoleUpdate, \
-    RoleFind
-from organization.schemas import (
-    OrganizationRead, OrganizationFind, OrganizationCreate, OrganizationUpdate
-)
-from project.schemas import ProjectFind, ProjectRead, ProjectCreate, ProjectUpdate
 from scalars import DateTime, Duration
-from utils import find_obj
+from utils import add_from_instance
 
 
-@strawberry.input
-class UserAssigneeType:
-    id: UUID
-    organization_id: int
-    github_data: Optional[strawberry.scalars.JSON]
-
-
-@strawberry.experimental.pydantic.type(model=RoleRead, fields=["id", "name"])
-class RoleReadType:
-    permissions: strawberry.scalars.JSON
-
-
-@strawberry.experimental.pydantic.input(model=RoleFind, fields=["id", "name"])
-class RoleFindType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=RoleUpdate, fields=["name"])
-class RoleUpdateType:
+# Типы для Role
+@strawberry.type
+@add_from_instance
+class RoleType:
+    id: Optional[int]
+    name: Optional[str]
     permissions: Optional[strawberry.scalars.JSON]
 
 
-@strawberry.experimental.pydantic.input(model=RoleSchema, fields=["name"])
+@strawberry.input
+class RoleFindType:
+    id: Optional[int] = None
+    name: Optional[str] = None
+
+
+@strawberry.input
 class RoleCreateType:
+    name: str
     permissions: strawberry.scalars.JSON
 
 
-@strawberry.experimental.pydantic.type(model=TaskSchema, fields=[
-    'id', 'name', 'description', 'is_done', 'added_at', 'done_at',
-    'color', 'difficulty', 'project_id', 'group_id'])
-class TaskType:
-    duration: Duration
-    assignees: List["UserType"]
+@strawberry.input
+class RoleUpdateType:
+    name: Optional[str] = None
+    permissions: Optional[strawberry.scalars.JSON] = None
 
 
-@strawberry.experimental.pydantic.type(model=ProjectRead, all_fields=True)
-class ProjectType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=UserFind, fields=[
-    'id', 'first_name', 'last_name', 'email'
-])
-class UserFindType:
-    pass
-
-
-# @strawberry.experimental.pydantic.type(model=UserRead, fields=[
-#     'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
-#     'is_verified', 'pathfile', 'role', 'tg_id', 'id', "tasks"
-# ])
-# class UserType:
-#     # Используем strawberry.scalars.JSON для tg_settings
-#     tg_settings: Optional[strawberry.scalars.JSON]
-
-@strawberry.experimental.pydantic.type(model=UserRead, fields=[
-    'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
-    'is_verified', 'pathfile', 'tg_id', 'id', "tasks"
-])
+# Типы для User
+@strawberry.type
+@add_from_instance
 class UserType:
-    @strawberry.field
-    async def role(self, info: Info) -> Optional[RoleReadType]:
-        role_loader = info.context["role_loader"]
-        user = await info.context["user_loader"].load(self.id)
-        if user and user.role_id:
-            role = await role_loader.load(user.role_id)
-            return RoleReadType.from_pydantic(role)
-        return None
-
-    @strawberry.field
-    async def tasks(self, info: Info) -> List["TaskType"]:
-        task_loader = info.context["task_loader"]
-        tasks = await task_loader.load(self.id)
-        return [TaskType.from_pydantic(TaskRead.from_orm(task)) for task in tasks]
-
-    @strawberry.field
-    async def tasks_assigned(self, info: Info) -> List[TaskType]:
-        task_loader = info.context["task_loader"]
-        tasks = await task_loader.load(self.id, is_assigned=True)
-        return [TaskType.from_pydantic(task) for task in tasks]
+    id: Optional[UUID] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role_id: Optional[int] = None
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_superuser: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    pathfile: Optional[str] = None
+    tg_id: Optional[str] = None
+    tg_settings: Optional[strawberry.scalars.JSON] = None
+    organization_id: Optional[int] = None
+    is_email_confirmed: Optional[bool] = None
+    registered_at: Optional[DateTime] = None
+    organization: Optional["OrganizationType"] = None
+    role: Optional[RoleType] = None
+    tasks: Optional[List["TaskType"]] = None  # Using string annotation here
 
 
-@strawberry.experimental.pydantic.type(model=UserCreate, fields=[
-    'first_name', 'last_name', 'role_id', 'email', 'password', 'is_active',
-    'is_superuser', 'is_verified', 'pathfile', 'tg_id', 'github_name'
-])
+@strawberry.input
+class UserFindType:
+    id: Optional[UUID] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+
+
+@strawberry.input
 class UserCreateType:
-    tg_settings: strawberry.scalars.JSON
+    first_name: str
+    last_name: str
+    role_id: int
+    email: str
+    password: str
+    is_active: Optional[bool] = None
+    is_superuser: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    pathfile: Optional[str] = None
+    tg_id: Optional[str] = None
+    tg_settings: Optional[strawberry.scalars.JSON] = None
+    github_name: Optional[str] = None
 
-@strawberry.experimental.pydantic.input(model=UserUpdate, fields=[
-    'first_name', 'last_name', 'role_id', 'email', 'tg_id'
-])
+
+@strawberry.input
 class UserUpdateType:
-    tg_settings: strawberry.scalars.JSON
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role_id: Optional[int] = None
+    email: Optional[str] = None
+    tg_id: Optional[str] = None
+    tg_settings: Optional[strawberry.scalars.JSON] = None
+    github_name: Optional[str] = None
 
 
-@strawberry.experimental.pydantic.type(model=OrganizationRead, all_fields=True)
-class OrganizationType:
-    pass
+@strawberry.type
+@add_from_instance
+class TaskType:
+    id: Optional[int] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_done: Optional[bool] = None
+    added_at: Optional[DateTime] = None
+    done_at: Optional[DateTime] = None
+    assigner_id: Optional[UUID] = None
+    color: Optional[str] = None
+    duration: Optional[Duration] = None
+    difficulty: Optional[str] = None
+    project_id: Optional[int] = None
+    group_id: Optional[int] = None
+    assignees: Optional[List["UserType"]] = None
+    assigner: Optional["UserType"] = None
+
+    @classmethod
+    def from_instance_no_assignees(cls, instance):
+        return cls(
+            id=instance.id,
+            name=instance.name,
+            description=instance.description,
+            is_done=instance.is_done,
+            added_at=instance.added_at,
+            done_at=instance.done_at,
+            assigner_id=instance.assigner_id,
+            color=instance.color,
+            duration=instance.duration,
+            difficulty=instance.difficulty,
+            project_id=instance.project_id,
+            group_id=instance.group_id,
+            assignees=None,  # No assignees loaded
+        )
 
 
-@strawberry.experimental.pydantic.input(model=OrganizationFind, all_fields=True)
-class OrganizationFindType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=OrganizationCreate, all_fields=True)
-class OrganizationCreateType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=OrganizationUpdate, all_fields=True)
-class OrganizationUpdateType:
-    pass
-
-
-@strawberry.experimental.pydantic.input(model=TaskFind, all_fields=True)
+@strawberry.input
 class TaskFindType:
-    pass
+    id: Optional[int] = None
+    name: Optional[str] = None
+    assigner_id: Optional[UUID] = None
+    color: Optional[str] = None
+    difficulty: Optional[str] = None
+    project_id: Optional[int] = None
+    group_id: Optional[int] = None
 
 
 @strawberry.input
 class TaskCreateType:
     name: str
-    description: Optional[str]
-    is_done: Optional[bool]
+    description: Optional[str] = None
+    is_done: Optional[bool] = None
     assigner_id: UUID
-    color: Optional[str]
+    color: Optional[str] = None
     duration: Duration
-    difficulty: Optional[str]
+    difficulty: Optional[str] = None
     project_id: int
-    group_id: Optional[int]
-    assignees: Optional[List[UserAssigneeType]]
+    group_id: Optional[int] = None
+    assignees: Optional[List[strawberry.scalars.JSON]] = None
 
-@strawberry.experimental.pydantic.type(model=TaskRead, fields=[
-    'id', 'name', 'description', 'is_done', 'assigner_id', 'color', 'difficulty', 'project_id', 'assignees', 'assigner'])
-class TaskReadType:
-    added_at: DateTime
-    done_at: DateTime
-    duration: Duration
 
-@strawberry.experimental.pydantic.input(model=TaskUpdate, fields=[
-    'name', 'description', 'is_done', 'assigner_id', 'color', 'difficulty', 'project_id'])
+@strawberry.input
 class TaskUpdateType:
-    added_at: Optional[DateTime] = None
-    done_at: Optional[DateTime] = None
-    duration: Optional[Duration]
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_done: Optional[bool] = None
+    assigner_id: Optional[UUID] = None
+    color: Optional[str] = None
+    duration: Optional[Duration] = None
+    difficulty: Optional[str] = None
+    project_id: Optional[int] = None
+    group_id: Optional[int] = None
 
 
-@strawberry.input()
-class TaskDecreaseTime:
-    seconds: int
+@strawberry.type
+@add_from_instance
+class OrganizationType:
+    id: Optional[int] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    staff: Optional[List[UserType]] = None
+    # workers: Optional[List[UserType]] = None
+    # managers: Optional[List[UserType]] = None
+    projects: Optional[List["ProjectType"]] = None
 
 
-@strawberry.experimental.pydantic.type(model=UserSchema, fields=[
-    'id',
-    'first_name', 'last_name', 'role_id', 'email', 'is_active', 'is_superuser',
-    'is_verified', 'pathfile', 'tg_id', 'organization_id',
-    'is_email_confirmed', 'registered_at'
-])
-class UserReadType:
-    tg_settings: strawberry.scalars.JSON
-    role: Optional[RoleReadType]
-    tasks: Optional[List[TaskType]]
+@strawberry.input
+class OrganizationFindType:
+    id: Optional[int] = None
+    name: Optional[str] = None
 
 
-@strawberry.experimental.pydantic.input(model=ProjectFind, all_fields=True)
+@strawberry.input
+class OrganizationCreateType:
+    name: str
+    description: str
+
+
+@strawberry.input
+class OrganizationUpdateType:
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+@strawberry.type
+@add_from_instance
+class ProjectType:
+    id: Optional[int] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    created_at: Optional[DateTime] = None
+    organization_id: Optional[int] = None
+    tasks: Optional[List[TaskType]] = None  # Using actual TaskType here
+
+
+@strawberry.input
 class ProjectFindType:
-    pass
+    id: Optional[int] = None
+    name: Optional[str] = None
 
 
-@strawberry.experimental.pydantic.input(model=ProjectCreate, all_fields=True)
+@strawberry.input
 class ProjectCreateType:
-    pass
+    name: str
+    description: Optional[str] = None
+    organization_id: int
 
 
-@strawberry.experimental.pydantic.input(model=ProjectUpdate, all_fields=True)
+@strawberry.input
 class ProjectUpdateType:
-    pass
+    name: Optional[str] = None
+    description: Optional[str] = None
+    organization_id: Optional[int] = None
 
 
-@strawberry.experimental.pydantic.type(model=GroupRead, all_fields=True)
+@strawberry.type
+@add_from_instance
 class GroupType:
-    pass
+    id: Optional[int] = None
+    name: Optional[str] = None
+    tasks: Optional[List[TaskType]] = None
+    user: Optional[UserType] = None
 
 
-@strawberry.experimental.pydantic.input(model=GroupFind, all_fields=True)
+@strawberry.input
 class GroupFindType:
-    pass
+    id: Optional[int] = None
+    name: Optional[str] = None
+    user_id: Optional[UUID] = None
 
 
-@strawberry.experimental.pydantic.input(model=GroupCreate, all_fields=True)
+@strawberry.input
 class GroupCreateType:
-    pass
+    name: str
+    user_id: UUID
 
 
-@strawberry.experimental.pydantic.input(model=GroupUpdate, all_fields=True)
+@strawberry.input
 class GroupUpdateType:
-    pass
-
-
-# class TaskReadSchema:
-#     id: int = Field(int)
-#     description: str = Field(str)
-#     is_done: bool = Field(bool)
-#     added_at: datetime = Field(datetime)
-#     done_at: Optional[datetime] = Field(datetime, default=None)
-#     color: str = Field(str)
-#     difficulty: str = Field(str)
-#     assignees: Optional[List[UserSchemaType]] = Field(List[UserSchemaType], default=None)
-#     assigner: Optional[UserSchemaType] = Field(UserSchemaType, default=None)
-
+    name: Optional[str] = None
+    user_id: Optional[UUID] = None
