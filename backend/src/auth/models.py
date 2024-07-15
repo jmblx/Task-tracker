@@ -21,7 +21,7 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     last_name: Mapped[str]
     role_id: Mapped[int] = mapped_column(ForeignKey("role.id"), default=1)
     role: Mapped["Role"] = relationship(
-        back_populates="users", uselist=False, lazy="joined"
+        back_populates="users", uselist=False
     )
     email: Mapped[str]
     is_email_confirmed: Mapped[bool] = mapped_column(default=False)
@@ -39,12 +39,12 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     tasks = relationship("Task", back_populates="assignees", uselist=True, secondary="user_task")
     task_created = relationship("Task", back_populates="assigner", uselist=True)
     organization_id: Mapped[int] = mapped_column(ForeignKey("organization.id"), nullable=True)
-    organization = relationship("Organization", back_populates="staff", uselist=False, lazy="joined")
+    organization = relationship("Organization", back_populates="staff", uselist=False)
     pathfile: Mapped[str] = mapped_column(nullable=True)
     oauth_accounts: Mapped[List[OAuthAccount]] = relationship(
-        "OAuthAccount", lazy="joined"
+        "OAuthAccount"
     )
-    groups: Mapped[List["Group"]] = relationship("Group", uselist=True, back_populates="user", lazy="joined")
+    groups: Mapped[List["Group"]] = relationship("Group", uselist=True, back_populates="user")
     github_name: Mapped[str] = mapped_column(nullable=True)
 
 

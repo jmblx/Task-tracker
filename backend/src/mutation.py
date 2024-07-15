@@ -5,9 +5,12 @@ from auth.models import User, Role
 from organization.models import Organization
 from project.models import Project
 from task.models import Task, Group
-from gql_types import UserCreateType, UserUpdateType, RoleCreateType, RoleUpdateType, OrganizationCreateType,\
-    OrganizationUpdateType, ProjectCreateType, ProjectUpdateType, TaskCreateType, TaskUpdateType
-from utils import insert_obj, update_object, insert_task, prepare_data_mailing, send_task_updates
+from gql_types import UserCreateType, UserUpdateType, RoleCreateType, RoleUpdateType, OrganizationCreateType, \
+    OrganizationUpdateType, ProjectCreateType, ProjectUpdateType, TaskCreateType, TaskUpdateType, GroupUpdateType, \
+    GroupCreateType
+from utils import insert_obj, update_object, insert_task, prepare_data_mailing, send_task_updates, \
+    decrease_task_time_by_id
+
 
 @strawberry.type
 class Mutation:
@@ -58,9 +61,10 @@ class Mutation:
             'difficulty': data.difficulty,
             'project_id': data.project_id,
             'group_id': data.group_id,
+            'assignees': data.assignees if data.assignees else [],
         }
 
-        obj_id = await insert_task(Task, task_data, data.assignees if data.assignees else [])
+        obj_id = await insert_task(Task, task_data)
         return obj_id
 
     @strawberry.mutation
@@ -73,4 +77,19 @@ class Mutation:
         # if data_mailing:
         #     await send_task_updates(data_mailing)
 
+        return True
+
+    @strawberry.mutation
+    async def decrease_task_time(self, id: int, seconds: int) -> bool:
+        await decrease_task_time_by_id(id, seconds)
+        return True
+
+    @strawberry.mutation
+    async def add_group(self, data: GroupCreateType) -> int:
+        obj_id = await insert_obj(Group, data.__dict__)
+        return obj_id
+
+    @strawberry.mutation
+    async def update_group(self, id: int, data: GroupUpdateType) -> bool:
+        await update_object(data.__dict__, Group, id)
         return True

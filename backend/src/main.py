@@ -1,4 +1,5 @@
 import os
+import time
 
 import redis.asyncio as aioredis
 from fastapi import FastAPI, Depends
@@ -20,6 +21,33 @@ from config import SECRET_AUTH
 from graphql_schema import schema
 from user_data.router import router as profile_router
 from integration.multiple_tasks import router as asana_router
+
+
+import logging
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+
+
+# logging.basicConfig()
+# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+# Настройка логирования для SQLAlchemy
+# @event.listens_for(Engine, "before_cursor_execute")
+# def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+#     conn.info.setdefault('query_start_time', []).append(time.time())
+#     logging.info("Start Query: %s" % statement)
+#     logging.info("Parameters: %s" % parameters)
+#
+# @event.listens_for(Engine, "after_cursor_execute")
+# def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+#     total = time.time() - conn.info['query_start_time'].pop(-1)
+#     logging.info("Query Complete!")
+#     logging.info("Total Time: %f" % total)
+#
+# @event.listens_for(Engine, "handle_error")
+# def handle_error(context):
+#     logging.error("An exception occurred: %s", context.original_exception)
+
 
 app = FastAPI(title="requests proceed API")
 
@@ -71,7 +99,7 @@ app.include_router(
 
 app.include_router(auth_router)
 app.include_router(profile_router)
-app.include_router(asana_router)
+# app.include_router(asana_router)
 app.include_router(speech_task_router)
 
 async def get_context(

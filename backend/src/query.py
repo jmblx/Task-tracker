@@ -1,8 +1,9 @@
 from typing import Optional
+import re
 
 import strawberry
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, load_only
 from strawberry import Info
 
 from auth.models import User, Role
@@ -11,54 +12,40 @@ from project.models import Project
 from task.models import Task, Group
 from gql_types import UserType, UserFindType, RoleType, RoleFindType, OrganizationType, \
     OrganizationFindType, ProjectType, ProjectFindType, TaskType, TaskFindType, GroupType, GroupFindType
-from utils import find_obj, get_selected_fields
+from utils import find_obj, get_selected_fields, extract_selected_fields, extract_model_name, \
+    get_model, get_model_fields, convert_dict_top_level_to_snake_case, create_query_options, \
+    strawberry_field_with_params
 
 
 @strawberry.type
 class Query:
+
     @strawberry.field
+    @strawberry_field_with_params(Role, RoleType, 'getRole')
+    async def get_role(self, info: Info, search_data: RoleFindType) -> Optional[RoleType]:
+        pass
+
+    @strawberry.field
+    @strawberry_field_with_params(User, UserType, 'getUser')
     async def get_user(self, info: Info, search_data: UserFindType) -> Optional[UserType]:
-        selected_fields = get_selected_fields(info, 'getUser')
-        user = await find_obj(
-            User,
-            search_data.__dict__,
-            selected_fields
-        )
-        if user:
-            return UserType.from_instance(user, selected_fields)
-        return None
+        pass
 
     @strawberry.field
+    @strawberry_field_with_params(Task, TaskType, 'getTask')
     async def get_task(self, info: Info, search_data: TaskFindType) -> Optional[TaskType]:
-        selected_fields = get_selected_fields(info, 'get_task')
-        task = await find_obj(Task, search_data.__dict__, selected_fields)
-        if task:
-            return TaskType.from_instance(task)
-        return None
+        pass
 
     @strawberry.field
+    @strawberry_field_with_params(Organization, OrganizationType, 'getOrganization')
     async def get_organization(self, info: Info, search_data: OrganizationFindType) -> Optional[OrganizationType]:
-        selected_fields = get_selected_fields(info, 'get_organization')
-        organization = await find_obj(Organization, search_data.__dict__, selected_fields)
-        if organization:
-            return OrganizationType.from_instance(organization)
-        return None
+        pass
 
     @strawberry.field
+    @strawberry_field_with_params(Project, ProjectType, 'getProject')
     async def get_project(self, info: Info, search_data: ProjectFindType) -> Optional[ProjectType]:
-        selected_fields = get_selected_fields(info, 'get_project')
-        project = await find_obj(Project, search_data.__dict__, selected_fields)
-        if project:
-            return ProjectType.from_instance(project)
-        return None
+        pass
 
     @strawberry.field
+    @strawberry_field_with_params(Group, GroupType, 'getGroup')
     async def get_group(self, info: Info, search_data: GroupFindType) -> Optional[GroupType]:
-        selected_fields = get_selected_fields(info, 'get_group')
-        group = await find_obj(Group, search_data.__dict__, selected_fields)
-        if group:
-            return GroupType.from_instance(group)
-        return None
-
-
-
+        pass
