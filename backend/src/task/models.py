@@ -27,6 +27,7 @@ class Task(Base):
     description: Mapped[str]
     is_done: Mapped[bool] = mapped_column(nullable=False, default=False)
     added_at: Mapped[added_at]
+    end_date: Mapped[datetime.datetime] = mapped_column(nullable=True)
     done_at: Mapped[datetime.datetime] = mapped_column(nullable=True)
     assignees = relationship(
         "User",

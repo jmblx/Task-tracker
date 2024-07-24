@@ -12,9 +12,9 @@ from utils import add_from_instance
 @strawberry.type
 @add_from_instance
 class RoleType:
-    id: Optional[int]
-    name: Optional[str]
-    permissions: Optional[strawberry.scalars.JSON]
+    id: Optional[int] = None
+    name: Optional[str] = None
+    permissions: Optional[strawberry.scalars.JSON] = None
 
 
 @strawberry.input
@@ -149,6 +149,7 @@ class TaskCreateType:
     assigner_id: UUID
     color: Optional[str] = None
     duration: Duration
+    end_date: Optional[DateTime] = None
     difficulty: Optional[str] = None
     project_id: int
     group_id: Optional[int] = None
@@ -163,6 +164,7 @@ class TaskUpdateType:
     assigner_id: Optional[UUID] = None
     color: Optional[str] = None
     duration: Optional[Duration] = None
+    end_date: Optional[DateTime] = None
     difficulty: Optional[str] = None
     project_id: Optional[int] = None
     group_id: Optional[int] = None
@@ -255,3 +257,9 @@ class GroupCreateType:
 class GroupUpdateType:
     name: Optional[str] = None
     user_id: Optional[UUID] = None
+
+
+@strawberry.input
+class OrderByInput:
+    field: str
+    direction: str

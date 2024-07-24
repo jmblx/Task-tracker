@@ -1,13 +1,19 @@
 # Rinh-hack. RNDSOFT
 ## Процесс разработки
 ### Создания виртуального окружения
+#### win
 ```shell
 python -m venv venv
 venv\Scripts\activate
 ```
+#### lin
+```shell
+python3 -m venv venv
+source venv/bin/activate
+```
 ### Установка зависимостей
 ```shell
-pip install -r requirements\dev.txt
+poetry install
 ```
 ### Запустить сервер
 ```shell

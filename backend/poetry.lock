@@ -1617,6 +1617,16 @@ files = [
 cli = ["click (>=5.0)"]
 
 [[package]]
+name = "python-logstash"
+version = "0.4.8"
+description = "Python logging handler for Logstash."
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-logstash-0.4.8.tar.gz", hash = "sha256:d04e1ce11ecc107e4a4f3b807fc57d96811e964a554081b3bbb44732f74ef5f9"},
+]
+
+[[package]]
 name = "python-multipart"
 version = "0.0.9"
 description = "A streaming multipart parser for Python"
@@ -2279,4 +2289,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "9767d448ef6f4654a0df055aba16b5db4b53763b48217da05083c2da99cf66d0"
+content-hash = "7e3b3697fd5bbabe6037ec1fa102226b7ba75ad20376a95c5923a3ac102999ef"
