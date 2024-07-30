@@ -29,7 +29,7 @@ down: check_docker
 	docker-compose down
 
 up-non-log: check_docker
-	docker-compose -f ./docker-compose-non-log.yml up
+	docker-compose -f ./docker-compose-non-log.yml up --build
 
 down-non-log: check_docker
 	docker-compose -f ./docker-compose-non-log.yml down
@@ -40,14 +40,32 @@ deps:
 
 # Работа с базой данных
 db: deps
-	cd backend && \
+	cd api && \
 	alembic revision --autogenerate && \
 	alembic upgrade head
 
+dbo:
+	cd api && \
+	alembic revision --autogenerate && \
+	alembic upgrade head
+
+
+downgrade:
+	cd api && \
+	alembic downgrade -1
+
 # Запуск приложения в режиме разработки
 dev: db
-	cd backend/src && \
+	cd api/src && \
 	uvicorn main:app --reload
+
+uv:
+	cd api/src && \
+	uvicorn main:app --reload
+
+nfy:
+	cd notification/ && \
+	python app.py
 
 # Очистка проекта
 clean:

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="38ca5b12-2d14-4ad1-9595-ea1aa8c874a7" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../.env-dist" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/.env-non-dev" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/alembic.ini" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/docker/app.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/docker/oauth.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/README" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/env.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/script.py.mako" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/026b2ba40902_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/0f0e4919f05f_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/21bce6917f86_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/31cb5ae0d33a_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/7782ab0967e1_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/9338949fdaa3_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/99cca025cc23_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/c8416d4c2815_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/cdc369cb5e36_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/d484ca80f52c_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/fa0b310cebb3_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/migrations/versions/fe6efc6ea19a_.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/poetry.lock" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/pyproject.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/auth_helpers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/crud.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/custom_auth_router.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/helpers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/manager.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/schemas.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/task_read_schema.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/auth/validation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/background/consumer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/background/producer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/config.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/constants.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/database.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/gql_types.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/graphql_schema.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/graphql_utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/headers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/integration/get_project.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/integration/get_task.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/integration/git_parse.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/integration/multiple_tasks.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/main.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/mutation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/my_type_notation.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/myredis/redis_config.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/myredis/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/organization/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/producer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/project/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/query.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/scalars.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/speech_task/abstract_text_processing.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/speech_task/recognition.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/speech_task/router.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/task/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/templates/templates.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/user_data/router.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/user_data/schemas.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/src/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../api/tests/handmade.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.env-prod" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docker/app.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/email_notification.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/../Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.env" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.env-non-dev" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/alembic.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/docker/app.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/docker/oauth.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/README" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/env.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/script.py.mako" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/026b2ba40902_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/0f0e4919f05f_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/31cb5ae0d33a_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/7782ab0967e1_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/99cca025cc23_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/d484ca80f52c_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/fa0b310cebb3_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/migrations/versions/fe6efc6ea19a_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/poetry.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/pyproject.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/auth/base_config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/auth/custom_auth_router.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/auth/manager.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/auth/models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/auth/schemas.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/auth/task_read_schema.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/auth/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/constants.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/database.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/gql_types.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/graphql_schema.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/integration/get_project.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/integration/get_task.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/integration/git_parse.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/integration/multiple_tasks.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/mutation.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/my_type_notation.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/organization/models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/organization/schemas.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/producer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/project/models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/project/schemas.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/query.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/redis_config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/scalars.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/speech_task/abstract_text_processing.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/speech_task/recognition.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/speech_task/router.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/task/group_schemas.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/task/models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/task/schemas.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/templates/templates.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/user_data/router.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/user_data/schemas.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../docker-compose-non-log.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../docker-compose-non-log.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../docker-compose.yml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectId" id="2jxeeo8nQSfrDnnuoaUEnubUr3q" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "D:/vs/NT-RNDSOFT/notification"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="38ca5b12-2d14-4ad1-9595-ea1aa8c874a7" name="Changes" comment="" />
+      <created>1722333253097</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1722333253097</updated>
+    </task>
+    <servers />
+  </component>
+</project>
