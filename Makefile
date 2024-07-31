@@ -29,7 +29,7 @@ down: check_docker
 	docker-compose down
 
 up-non-log: check_docker
-	docker-compose -f ./docker-compose-non-log.yml up --build
+	docker-compose -f ./docker-compose-non-log.yml up
 
 down-non-log: check_docker
 	docker-compose -f ./docker-compose-non-log.yml down
