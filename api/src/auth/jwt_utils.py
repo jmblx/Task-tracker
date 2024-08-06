@@ -55,6 +55,8 @@ def hash_password(
     pwd_bytes: bytes = password.encode()
     return bcrypt.hashpw(pwd_bytes, salt)
 
+print(hash_password("admin"))
+
 
 def validate_password(
     password: str,

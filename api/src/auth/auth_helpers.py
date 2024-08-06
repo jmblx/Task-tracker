@@ -1,15 +1,20 @@
+from typing import Optional
+
 from fastapi import HTTPException
 
-from auth.crud import get_user_by_email, get_user_by_id
+from auth.crud import get_user_by_email
 from auth.helpers import create_access_token
 from auth.models import User
-from auth.utils import validate_password, decode_jwt
+from auth.jwt_utils import validate_password, decode_jwt
+from db.utils import get_user_by_id
 from myredis.redis_config import get_redis
 
 
-async def authenticate_user(email: str, password: str) -> User:
+async def authenticate_user(email: str, password: Optional[str] = None) -> User:
     user = await get_user_by_email(email)
-    if user and validate_password(password, user.hashed_password):
+    if password and user and validate_password(password, user.hashed_password):
+        return user
+    elif user and not password:
         return user
     raise HTTPException(status_code=401)
 

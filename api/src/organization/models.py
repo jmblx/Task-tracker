@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Mapped, relationship
 
-from database import Base
+from db.database import Base
 from my_type_notation import intpk
 
 

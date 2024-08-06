@@ -1,11 +1,10 @@
-from uuid import UUID
-
+from fastapi import HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import load_only
 
 from auth.models import User
-from auth.utils import decode_jwt
-from database import async_session_maker
+from db.database import async_session_maker
+from db.utils import find_objs
 
 
 async def get_user_by_email(email: str) -> User:
@@ -15,19 +14,8 @@ async def get_user_by_email(email: str) -> User:
         return res.scalar()
 
 
-async def get_user_by_id(user_id: UUID, role: bool = False) -> User:
-    async with async_session_maker() as session:
-        if role:
-            query = (
-                select(User).where(User.id == user_id).options(joinedload(User.role))
-            )
-            user = (await session.execute(query)).unique().scalar()
-        else:
-            user = await session.get(User, user_id)
-        return user
-
-
-async def get_user_by_token(token: str) -> User:
-    payload = decode_jwt(token)
-    user = await get_user_by_id(payload.get("sub"), role=True)
-    return user
+async def find_user_by_search_data(find_data: dict) -> User:
+    user = await find_objs(User, find_data, [load_only(User.id), load_only(User.email)])
+    if user is None:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user[0]

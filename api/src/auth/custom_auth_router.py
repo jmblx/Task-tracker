@@ -1,11 +1,11 @@
 import fastapi
-from fastapi import Depends, Response, UploadFile, Request
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_200_OK
-from sqlalchemy import update, select
+from fastapi import Depends, Response
+from starlette.status import HTTP_400_BAD_REQUEST
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.models import User
-from database import get_async_session
+from db.database import get_async_session
 
 router = fastapi.APIRouter(prefix="/custom", tags=["custom-auth"])
 

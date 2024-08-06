@@ -11,6 +11,7 @@ import fastapi_users_db_sqlalchemy
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import JSON
 
 # revision identifiers, used by Alembic.
 revision: str = '7782ab0967e1'

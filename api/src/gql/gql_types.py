@@ -4,8 +4,8 @@ from uuid import UUID
 import strawberry
 from strawberry import scalars
 
-from scalars import DateTime, Duration
-from graphql_utils import add_from_instance
+from gql.graphql_utils import add_from_instance
+from gql.scalars import DateTime, Duration
 
 
 @strawberry.type
@@ -84,6 +84,14 @@ class UserCreateType:
     tg_id: Optional[str] = None
     tg_settings: Optional[strawberry.scalars.JSON] = None
     github_name: Optional[str] = None
+
+
+@strawberry.input
+class GoogleRegDTO:
+    email: str
+    givenName: str
+    familyName: str
+    emailVerified: bool
 
 
 @strawberry.input

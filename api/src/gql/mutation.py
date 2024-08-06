@@ -2,19 +2,26 @@ import inspect
 from typing import Optional
 from uuid import UUID
 
+import requests
 import strawberry
+from fastapi import HTTPException
+from google.oauth2 import id_token
 from strawberry import Info
 import secrets
 
-from auth.crud import get_user_by_id
+from strawberry.scalars import JSON
+
+from auth.crud import find_user_by_search_data
+from auth.google_auth import google_data_change
 from auth.models import User, Role
 from auth.reset_pwd_utils import set_new_pwd
+from config import GOOGLE_OAUTH_CLIENT_ID
 from myredis.redis_config import get_redis
 from myredis.utils import get_user_id_from_reset_pwd_token
 from organization.models import Organization
 from project.models import Project
 from task.models import Task, Group
-from gql_types import (
+from gql.gql_types import (
     UserCreateType,
     UserUpdateType,
     RoleCreateType,
@@ -32,16 +39,17 @@ from gql_types import (
     ProjectType,
     TaskType,
     GroupType,
-    UserType, UserFindType,
+    UserType,
+    GoogleRegDTO,
 )
 from utils import hash_user_pwd
-from graphql_utils import (
-    update_object,
+from gql.graphql_utils import (
     process_task_assignees,
-    strawberry_insert_with_params,
+    strawberry_insert,
     decrease_task_time_by_id,
-    strawberry_update_with_params, find_user_by_search_data,
-)
+    strawberry_update, get_func_data, strawberry_delete, )
+from db.utils import get_user_by_id
+from google_auth.andoroid_auth import google_register
 
 
 @strawberry.type
@@ -61,21 +69,24 @@ class Mutation:
         pass
 
     @strawberry.mutation
-    @strawberry_insert_with_params(Role)
+    @strawberry_insert(Role)
     async def add_role(self, info: Info, data: RoleCreateType) -> RoleType:
         pass
 
     @strawberry.mutation
-    @strawberry_update_with_params(Role)
+    @strawberry_update(Role)
     async def update_role(
         self, info: Info, item_id: int, data: RoleUpdateType
     ) -> RoleType:
         pass
 
+    # @strawberry.mutation
+    # @strawberry_delete
+
     @strawberry.mutation
-    @strawberry_insert_with_params(
+    @strawberry_insert(
         User,
-        hash_user_pwd,
+        process_extra_db=hash_user_pwd,
         exc_fields=["password"],
         notify_kwargs={"email_confirmation_token": secrets.token_urlsafe(32)},
         notify_from_data_kwargs={"email": "email"},
@@ -86,47 +97,52 @@ class Mutation:
         pass
 
     @strawberry.mutation
-    @strawberry_update_with_params(User)
+    @google_register
+    async def google_register(self, info: Info, data: GoogleRegDTO) -> UserType:
+        pass
+
+    @strawberry.mutation
+    @strawberry_update(User)
     async def update_user(
         self, info: Info, item_id: UUID, data: UserUpdateType
     ) -> UserType:
         pass
 
     @strawberry.mutation
-    @strawberry_insert_with_params(Organization)
+    @strawberry_insert(Organization)
     async def add_organization(
         self, info: Info, data: OrganizationCreateType
     ) -> OrganizationType:
         pass
 
     @strawberry.mutation
-    @strawberry_update_with_params(Organization)
+    @strawberry_update(Organization)
     async def update_organization(
         self, info: Info, item_id: int, data: OrganizationUpdateType
     ) -> OrganizationType:
         pass
 
     @strawberry.mutation
-    @strawberry_insert_with_params(Project)
+    @strawberry_insert(Project)
     async def add_project(self, info: Info, data: ProjectCreateType) -> ProjectType:
         pass
 
     @strawberry.mutation
-    @strawberry_update_with_params(Project)
+    @strawberry_update(Project)
     async def update_project(
         self, info: Info, item_id: int, data: ProjectUpdateType
     ) -> ProjectType:
         pass
 
     @strawberry.mutation
-    @strawberry_insert_with_params(
+    @strawberry_insert(
         Task, process_task_assignees, exc_fields=["assignees"]
     )
     async def add_task(self, info: Info, data: TaskCreateType) -> TaskType:
         pass
 
     @strawberry.mutation
-    @strawberry_update_with_params(Task)
+    @strawberry_update(Task)
     async def update_task(
         self, info: Info, item_id: int, data: TaskUpdateType
     ) -> TaskType:
@@ -138,12 +154,12 @@ class Mutation:
         return True
 
     @strawberry.mutation
-    @strawberry_insert_with_params(Group)
+    @strawberry_insert(Group)
     async def add_group(self, info: Info, data: GroupCreateType) -> GroupType:
         pass
 
     @strawberry.mutation
-    @strawberry_update_with_params(Group)
+    @strawberry_update(Group)
     async def update_group(
         self, info: Info, item_id: int, data: GroupUpdateType
     ) -> GroupType:

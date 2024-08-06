@@ -1,14 +1,12 @@
-import asyncio
 import datetime
 
 import asana
 from asana.rest import ApiException
-from pprint import pprint
 
 from sqlalchemy import select, insert
 
 from auth.models import User
-from database import async_session_maker
+from db.database import async_session_maker
 from project.models import Project
 from task.models import Task
 

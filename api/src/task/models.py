@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Interval
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base
+from db.database import Base
 from my_type_notation import added_at, intpk
 from project.models import Project  # noqa
 

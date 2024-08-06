@@ -1,21 +1,15 @@
-import logging
 import os
 from typing import Any, Dict
 from uuid import UUID
 
-from fastapi import HTTPException
-from jwt import ExpiredSignatureError, DecodeError
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
-from strawberry import Info
 import shutil
 from PIL import Image
 
-from auth.crud import get_user_by_token
-from auth.utils import hash_password
+from auth.jwt_utils import hash_password
 from task.models import Task, Group
 from auth.models import User
-from database import async_session_maker, Base
+from db.database import async_session_maker, Base
 
 
 async def create_upload_avatar(
@@ -104,13 +98,3 @@ async def hash_user_pwd(session: AsyncSession, user_id: UUID, data: dict):
     await session.commit()
 
 
-async def validate_permission(info: Info, permission: str):
-    try:
-        token = info.context.get("auth_token").replace("Bearer ", "")
-        print(token)
-        user = await get_user_by_token(token)
-    except (ExpiredSignatureError, DecodeError):
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED)
-    user_permissions = user.role.permissions
-    if permission not in user_permissions:
-        raise HTTPException(status_code=HTTP_403_FORBIDDEN)

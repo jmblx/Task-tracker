@@ -1,11 +1,8 @@
-import logging
 from typing import Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from nats.aio.client import Client as NATS
-from faststream import FastStream
-from faststream.nats import NatsBroker
 # from logstash import TCPLogstashHandler
 from starlette.requests import Request
 from strawberry.fastapi import GraphQLRouter
@@ -16,7 +13,7 @@ from headers import form_state
 
 # from auth.jwt_auth import router as jwt_router
 from speech_task.router import router as speech_task_router
-from graphql_schema import schema
+from gql.graphql_schema import schema
 from user_data.router import router as profile_router
 from auth.google_auth import router as google_auth_router
 

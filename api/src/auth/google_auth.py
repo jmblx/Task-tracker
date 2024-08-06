@@ -52,3 +52,8 @@ def auth_google_callback(request: Request):
     user_info = session.get('https://www.googleapis.com/oauth2/v2/userinfo').json()
 
     return user_info
+
+
+def google_data_change(data: dict):
+    data.update({"is_email_confirmed": True, "role_id": 1})
+    return data

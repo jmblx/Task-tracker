@@ -9,11 +9,9 @@ sys.path.append(os.path.join(sys.path[0], "src"))
 
 from config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
 # from integration.models import *
-from auth.models import *
-from database import Base
-from organization.models import *
-from task.models import *
 from project.models import *
+from auth.models import *
+
 
 
 

@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 
-from database import Base
+from db.database import Base
 from my_type_notation import intpk, added_at
 from organization.models import Organization
 

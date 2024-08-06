@@ -1,21 +1,18 @@
-import base64
 import os
-import random
 from uuid import UUID
 
 import fastapi
-from fastapi import Depends, UploadFile, Request, Response
+from fastapi import Depends, UploadFile, Response
 from fastapi.responses import FileResponse
-from sqlalchemy import insert, select, delete, update
+from sqlalchemy import insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
 from starlette.status import HTTP_404_NOT_FOUND
 
 from auth.models import User, Role
 from auth.schemas import RoleSchema
 from constants import IMAGES_DIR
-from database import get_async_session
+from db.database import get_async_session
 from user_data.schemas import LinkTG
 from utils import create_upload_avatar
 

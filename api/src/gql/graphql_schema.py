@@ -1,9 +1,9 @@
 import strawberry
 from strawberry.extensions import QueryDepthLimiter
 
-from mutation import Mutation
-from query import Query
-from scalars import DateTime, Duration
+from gql.mutation import Mutation
+from gql.query import Query
+from gql.scalars import DateTime, Duration
 
 schema = strawberry.Schema(
     query=Query,

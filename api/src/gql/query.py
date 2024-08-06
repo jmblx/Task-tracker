@@ -10,11 +10,10 @@ from strawberry import Info
 from strawberry.scalars import JSON
 
 from auth.auth_helpers import authenticate_user, refresh_access_token
-from auth.crud import get_user_by_email, get_user_by_id
-from auth.helpers import create_access_token, create_refresh_token
-from auth.models import User, Role, RefreshToken
-from auth.utils import encode_jwt, validate_password, decode_jwt
-from gql_types import (
+from auth.crud import find_user_by_search_data
+from auth.helpers import authenticate
+from auth.models import User, Role
+from gql.gql_types import (
     UserType,
     UserFindType,
     RoleType,
@@ -35,9 +34,8 @@ from project.models import Project
 from myredis.redis_config import get_redis
 from myredis.utils import save_refresh_token_to_redis, token_to_redis
 from task.models import Task, Group
-from utils import insert_default
-from graphql_utils import strawberry_field_with_params, find_objs, send_request_change_password, \
-    find_user_by_search_data
+from gql.graphql_utils import strawberry_read
+from auth.reset_pwd_utils import send_request_change_password
 
 logging.basicConfig(level=logging.INFO)
 
@@ -57,23 +55,9 @@ class Query:
     @strawberry.field
     async def auth_user(self, info: strawberry.types.Info, auth_data: UserAuthType) -> JSON:
         user = await authenticate_user(auth_data.email, auth_data.password)
-        access_token = create_access_token(user)
-        fingerprint = info.context.get("fingerprint")
+        info.context["response"], access_token = await authenticate(info, user)
 
-        async with get_redis() as redis:
-            refresh_token_data = await create_refresh_token(user, fingerprint)
-            await save_refresh_token_to_redis(redis, refresh_token_data)
-
-        response = info.context["response"]
-        response.set_cookie(
-            key="refreshToken",
-            value=refresh_token_data["token"],
-            httponly=True,
-            secure=False,
-            samesite="lax",
-        )
-
-        return {"accessToken": access_token}
+        return access_token
 
     @strawberry.field
     async def refresh(self, info: Info) -> JSON:
@@ -87,7 +71,7 @@ class Query:
         return {"accessToken": new_access_token}
 
     @strawberry.field
-    @strawberry_field_with_params(Role, RoleType, "getRole")
+    @strawberry_read(Role, RoleType, "getRole")
     async def get_role(
         self,
         info: Info,
@@ -97,7 +81,7 @@ class Query:
         pass
 
     @strawberry.field
-    @strawberry_field_with_params(User, UserType, "getUser")
+    @strawberry_read(User, UserType, "getUser")
     async def get_user(
         self,
         info: Info,
@@ -107,7 +91,7 @@ class Query:
         pass
 
     @strawberry.field
-    @strawberry_field_with_params(Task, TaskType, "getTask")
+    @strawberry_read(Task, TaskType, "getTask")
     async def get_task(
         self,
         info: Info,
@@ -117,7 +101,7 @@ class Query:
         pass
 
     @strawberry.field
-    @strawberry_field_with_params(Organization, OrganizationType, "getOrganization")
+    @strawberry_read(Organization, OrganizationType, "getOrganization")
     async def get_organization(
         self,
         info: Info,
@@ -127,7 +111,7 @@ class Query:
         pass
 
     @strawberry.field
-    @strawberry_field_with_params(Project, ProjectType, "getProject")
+    @strawberry_read(Project, ProjectType, "getProject")
     async def get_project(
         self,
         info: Info,
@@ -137,7 +121,7 @@ class Query:
         pass
 
     @strawberry.field
-    @strawberry_field_with_params(Group, GroupType, "getGroup")
+    @strawberry_read(Group, GroupType, "getGroup")
     async def get_group(
         self,
         info: Info,

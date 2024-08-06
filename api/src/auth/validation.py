@@ -5,13 +5,14 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from starlette import status
 
-from auth.crud import get_user_by_id, get_user_by_email
+from auth.crud import get_user_by_email
+from db.utils import get_user_by_id
 from auth.helpers import (
     TOKEN_TYPE_FIELD,
     ACCESS_TOKEN_TYPE,
     REFRESH_TOKEN_TYPE,
 )
-from auth import utils as auth_utils
+from auth import jwt_utils
 from auth.models import User
 from auth.schemas import UserAuth
 
@@ -24,7 +25,7 @@ def get_current_token_payload(
     token: str = Depends(oauth2_scheme),
 ) -> dict:
     try:
-        payload = auth_utils.decode_jwt(
+        payload = jwt_utils.decode_jwt(
             token=token,
         )
     except InvalidTokenError as e:
@@ -108,7 +109,7 @@ async def validate_auth_user(
     if not (user := await get_user_by_email(email)):
         raise unauthed_exc
 
-    if not auth_utils.validate_password(
+    if not jwt_utils.validate_password(
         password=password,
         hashed_password=user.hashed_password,
     ):
