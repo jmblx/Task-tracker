@@ -3,6 +3,7 @@ from uuid import UUID
 
 import strawberry
 from strawberry import scalars
+from strawberry.scalars import JSON
 
 from gql.graphql_utils import add_from_instance
 from gql.scalars import DateTime, Duration
@@ -50,15 +51,13 @@ class UserType:
     role_id: Optional[int] = None
     email: Optional[str] = None
     is_active: Optional[bool] = None
-    is_superuser: Optional[bool] = None
     is_verified: Optional[bool] = None
     pathfile: Optional[str] = None
     tg_id: Optional[str] = None
     tg_settings: Optional[strawberry.scalars.JSON] = None
-    organization_id: Optional[int] = None
     is_email_confirmed: Optional[bool] = None
     registered_at: Optional[DateTime] = None
-    organization: Optional["OrganizationType"] = None
+    organizations: Optional[List["OrganizationType"]] = None
     role: Optional[RoleType] = None
     tasks: Optional[List["TaskType"]] = None  # Using string annotation here
 
@@ -123,24 +122,6 @@ class TaskType:
     assignees: Optional[List["UserType"]] = None
     assigner: Optional["UserType"] = None
 
-    @classmethod
-    def from_instance_no_assignees(cls, instance):
-        return cls(
-            id=instance.id,
-            name=instance.name,
-            description=instance.description,
-            is_done=instance.is_done,
-            added_at=instance.added_at,
-            done_at=instance.done_at,
-            assigner_id=instance.assigner_id,
-            color=instance.color,
-            duration=instance.duration,
-            difficulty=instance.difficulty,
-            project_id=instance.project_id,
-            group_id=instance.group_id,
-            assignees=None,  # No assignees loaded
-        )
-
 
 @strawberry.input
 class TaskFindType:
@@ -154,18 +135,25 @@ class TaskFindType:
 
 
 @strawberry.input
+class AssigneeType:
+    id: Optional[UUID] = None
+    github_data: Optional[JSON] = None
+    organization_id: Optional[int] = None
+
+
+@strawberry.input
 class TaskCreateType:
     name: str
     description: Optional[str] = None
     is_done: Optional[bool] = None
-    assigner_id: UUID
+    assigner_id: Optional[UUID] = None
     color: Optional[str] = None
     duration: Duration
     end_date: Optional[DateTime] = None
     difficulty: Optional[str] = None
-    project_id: int
+    project_id: Optional[int] = None
     group_id: Optional[int] = None
-    assignees: Optional[List[strawberry.scalars.JSON]] = None
+    assignees: Optional[List[AssigneeType]] = None
 
 
 @strawberry.input
@@ -198,18 +186,28 @@ class OrganizationType:
 class OrganizationFindType:
     id: Optional[int] = None
     name: Optional[str] = None
+    owner_id: Optional[UUID] = None
+
+
+@strawberry.input
+class StaffType:
+    id: UUID
+    position: str
+    permissions: JSON
 
 
 @strawberry.input
 class OrganizationCreateType:
     name: str
     description: str
+    staff: Optional[List[StaffType]] = None
 
 
 @strawberry.input
 class OrganizationUpdateType:
     name: Optional[str] = None
     description: Optional[str] = None
+    staff: Optional[List[UUID]] = None
 
 
 @strawberry.type

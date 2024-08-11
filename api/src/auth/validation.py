@@ -2,11 +2,13 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, Form
 from fastapi.security import OAuth2PasswordBearer
-from jwt import InvalidTokenError
+from jwt import InvalidTokenError, ExpiredSignatureError, DecodeError
 from starlette import status
+from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
+from strawberry import Info
 
 from auth.crud import get_user_by_email
-from db.utils import get_user_by_id
+from db.utils import get_user_by_id, get_user_by_token
 from auth.helpers import (
     TOKEN_TYPE_FIELD,
     ACCESS_TOKEN_TYPE,
@@ -122,3 +124,16 @@ async def validate_auth_user(
         )
 
     return user
+
+
+async def validate_permission(info: Info, entity: str, permission: str):
+    try:
+        token = info.context.get("auth_token").replace("Bearer ", "")
+        print(token)
+        user = await get_user_by_token(token)
+    except (ExpiredSignatureError, DecodeError):
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED)
+    entity_permissions = user.role.permissions.get(entity)
+    print(entity_permissions, permission, entity)
+    if permission not in entity_permissions:
+        raise HTTPException(status_code=HTTP_403_FORBIDDEN)

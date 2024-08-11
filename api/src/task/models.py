@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.database import Base
-from my_type_notation import added_at, intpk
+from db_types import added_at, intpk
 from project.models import Project  # noqa
 
 
@@ -24,7 +24,7 @@ class Task(Base):
 
     id: Mapped[intpk]
     name: Mapped[str] = mapped_column(nullable=False)
-    description: Mapped[str]
+    description: Mapped[str] = mapped_column(nullable=False)
     is_done: Mapped[bool] = mapped_column(nullable=False, default=False)
     added_at: Mapped[added_at]
     end_date: Mapped[datetime.datetime] = mapped_column(nullable=True)
@@ -35,7 +35,9 @@ class Task(Base):
         uselist=True,
         secondary="user_task",
     )
-    assigner_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=True)
+    assigner_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=True
+    )
     assigner = relationship(
         "User",
         back_populates="task_created",
@@ -44,9 +46,11 @@ class Task(Base):
     color: Mapped[str]
     duration = mapped_column(Interval)
     difficulty: Mapped[Difficulty] = mapped_column(nullable=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey("project.id"))
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("project.id", ondelete="CASCADE"), nullable=True
+    )
     project = relationship("Project", uselist=False, back_populates="tasks")
-    group_id: Mapped[int] = mapped_column(ForeignKey("group.id"), nullable=True)
+    group_id: Mapped[int] = mapped_column(ForeignKey("group.id", ondelete="CASCADE"), nullable=True)
     group = relationship("Group", uselist=False, back_populates="tasks")
 
 
@@ -55,8 +59,12 @@ class UserTask(Base):
 
     id: Mapped[intpk]
     github_data: Mapped[dict] = mapped_column(JSON, nullable=True)
-    task_id: Mapped[int] = mapped_column(ForeignKey("task.id"), nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("task.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
     is_employee: Mapped[bool] = mapped_column(nullable=False, default=True)
 
 
@@ -65,6 +73,8 @@ class Group(Base):
 
     id: Mapped[intpk]
     name: Mapped[str]
-    tasks = relationship("Task", uselist=True, back_populates="group")
+    tasks = relationship("Task", uselist=True, back_populates="group", cascade="all, delete-orphan")
     user = relationship("User", uselist=False, back_populates="groups")
-    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), nullable=True)
+    project = relationship("Project", uselist=False, back_populates="groups")
+    project_id: Mapped[int] = mapped_column(ForeignKey("project.id"), nullable=True)

@@ -3,13 +3,14 @@ from typing import Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from nats.aio.client import Client as NATS
+
 # from logstash import TCPLogstashHandler
 from starlette.requests import Request
 from strawberry.fastapi import GraphQLRouter
 
 from auth.custom_auth_router import router as auth_router
 from config import NATS_URL
-from headers import form_state
+from middleware_utils import form_state
 
 # from auth.jwt_auth import router as jwt_router
 from speech_task.router import router as speech_task_router
@@ -22,13 +23,16 @@ app = FastAPI(title="requests proceed API")
 
 nats_client = NATS()
 
+
 @app.on_event("startup")
 async def startup_event():
     await nats_client.connect(servers=[NATS_URL])
 
+
 @app.on_event("shutdown")
 async def shutdown_event():
     await nats_client.close()
+
 
 app.include_router(auth_router)
 app.include_router(profile_router)
@@ -52,7 +56,7 @@ async def get_context(request: Request) -> Dict:
         "auth_token": request.state.auth_token,
         "refresh_token": request.state.refresh_token,
         "fingerprint": request.state.fingerprint,
-        "nats_client": nats_client
+        "nats_client": nats_client,
     }
 
 

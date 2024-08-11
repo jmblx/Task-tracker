@@ -6,9 +6,6 @@ import jwt
 
 from config import settings
 
-# >>> private_key = b"-----BEGIN PRIVATE KEY-----\nMIGEAgEAMBAGByqGSM49AgEGBS..."
-# >>> public_key = b"-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEAC..."
-
 
 def encode_jwt(
     payload: dict,
@@ -54,8 +51,6 @@ def hash_password(
     salt = bcrypt.gensalt()
     pwd_bytes: bytes = password.encode()
     return bcrypt.hashpw(pwd_bytes, salt)
-
-print(hash_password("admin"))
 
 
 def validate_password(

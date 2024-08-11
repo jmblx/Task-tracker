@@ -1,6 +1,6 @@
 import requests
 
-url = 'http://localhost:8000/graphql'
+url = "http://localhost:8000/graphql"
 
 query = """
 query {
@@ -11,14 +11,14 @@ query {
 }
 """
 
-response = requests.post(url, json={'query': query})
+response = requests.post(url, json={"query": query})
 
 cookies = response.cookies
 
 print("Response JSON:", response.json())
 print("Cookies:", cookies)
 
-refresh_token = cookies.get('refreshToken')
+refresh_token = cookies.get("refreshToken")
 if refresh_token:
     print("Refresh Token:", refresh_token)
 else:

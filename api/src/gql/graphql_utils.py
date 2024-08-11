@@ -1,38 +1,40 @@
-import re
 from datetime import timedelta
 from functools import wraps
-import inspect
 from typing import (
     Union,
     List,
     Any,
     Callable,
-    Tuple,
     Dict,
     get_type_hints,
     Type,
-    Optional, )
+    Optional,
+)
 from uuid import UUID
 
 from fastapi import HTTPException
-from jwt import ExpiredSignatureError, DecodeError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import (
-    selectinload,
-    class_mapper,
-    ColumnProperty,
-    RelationshipProperty,
-    joinedload,
-    load_only,
-)
-from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
+from sqlalchemy.orm import selectinload
 from strawberry import Info
 
+from auth.jwt_utils import decode_jwt
 from auth.models import User, Role
+from auth.validation import validate_permission
 from db.database import async_session_maker, Base
-from db.utils import update_object, insert_entity, find_objs, get_model, get_user_by_token, delete_object, soft_delete
+from db.utils import update_object, insert_entity, find_objs, delete_object, soft_delete
 from message_routing.nats_utils import process_notifications
+from organization.models import UserOrg
 from task.models import Task, UserTask
+from utils import (
+    get_func_data,
+    extract_selected_fields,
+    extract_model_name,
+    snake_to_camel,
+    to_snake_case,
+    convert_dict_top_level_to_snake_case,
+    create_query_options,
+)
 
 
 # logger = logging.getLogger("fastapi")
@@ -44,10 +46,25 @@ async def process_task_assignees(
 ) -> None:
     assignees = data.get("assignees", [])
     for assignee_data in assignees:
-        assignee_data = to_snake_case(assignee_data)
-        user = await session.get(User, assignee_data["id"])
+        assignee_data = to_snake_case(assignee_data.__dict__)
+        user = (
+            (
+                await session.execute(
+                    select(User)
+                    .where(User.id == assignee_data["id"])
+                    .options(selectinload(User.organizations))
+                )
+            )
+            .unique()
+            .scalar()
+        )
         if user:
-            is_employee = user.organization_id == assignee_data.get("organization_id", False)
+            org_id = assignee_data.get("organization_id")
+            is_employee = (
+                org_id in [organization.id for organization in user.organizations]
+                if org_id and user.organizations
+                else False
+            )
             user_task = UserTask(
                 task_id=task_id,
                 user_id=user.id,
@@ -57,113 +74,23 @@ async def process_task_assignees(
             session.add(user_task)
 
 
-def extract_selected_fields(info, field_name):
-    selected_fields = {}
-
-    for field in info.selected_fields:
-        if field.name == field_name:
-            selected_fields[field.name] = process_selections(field.selections)
-            break
-
-    return selected_fields
-
-
-def process_selections(selections):
-    fields = {}
-
-    for selection in selections:
-        if selection.selections:
-            fields[selection.name] = process_selections(selection.selections)
-        else:
-            fields[selection.name] = {}
-
-    return fields
+async def process_project_staff(session: AsyncSession, org_id: int, data: dict) -> None:
+    staff = data.get("staff", [])
+    for employee_data in staff:
+        employee_data = to_snake_case(employee_data.__dict__)
+        user_org = UserOrg(
+            user_id=employee_data["id"],
+            organization_id=org_id,
+            position=employee_data["position"],
+            permissions=employee_data["permissions"],
+        )
+        session.add(user_org)
 
 
-def get_model_fields(model: Any) -> Tuple[List[str], Dict[str, Any]]:
-    """Возвращает кортеж из двух списков: физических полей и полей отношений."""
-    mapper = class_mapper(model)
-    physical_fields = []
-    relationship_fields = {}
-
-    for prop in mapper.iterate_properties:
-        if isinstance(prop, ColumnProperty):
-            physical_fields.append(prop.key)
-        elif isinstance(prop, RelationshipProperty):
-            relationship_fields[prop.key] = prop.mapper.class_
-
-    return physical_fields, relationship_fields
-
-
-def extract_model_name(class_name: str) -> Base:
-    match = re.match(r"^[A-Z][a-z]*[A-Z]", class_name)
-    if match:
-        return match.group(0)[:-1]
-    return class_name
-
-
-def snake_to_camel(snake_str):
-    components = snake_str.split("_")
-    return components[0] + "".join(x.capitalize() for x in components[1:])
-
-
-def camel_to_snake(name):
-    """Преобразует camelCase в snake_case"""
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
-
-
-def to_snake_case(data, keep_top_level_keys=False) -> Union[dict, list]:
-    """Преобразует ключи словаря и его вложенных словарей в snake_case"""
-    if isinstance(data, dict):
-        new_dict = {}
-        for key, value in data.items():
-            new_key = key if keep_top_level_keys else camel_to_snake(key)
-            new_dict[new_key] = to_snake_case(value)
-        return new_dict
-    elif isinstance(data, list):
-        return [to_snake_case(item) for item in data]
-    else:
-        return data
-
-
-def convert_dict_top_level_to_snake_case(data):
-    """Преобразует только вложенные ключи в snake_case, ключи первого уровня оставляет неизменными"""
-    if isinstance(data, dict):
-        new_dict = {}
-        for key, value in data.items():
-            new_dict[key] = to_snake_case(value, keep_top_level_keys=False)
-        return new_dict
-    else:
-        return data
-
-
-def create_query_options(model: Any, fields: Dict[str, Any]) -> List:
-    """Рекурсивно создает опции запроса для загрузки нужных полей и вложенных отношений."""
-    physical_fields, relationship_fields = get_model_fields(model)
-    options = []
-
-    for field, subfields in fields.items():
-        if field in relationship_fields:
-            rel_model = relationship_fields[field]
-            field_type = get_type_hints(model).get(field, None)
-            if (
-                field_type
-                and hasattr(field_type, "__origin__")
-                and field_type.__origin__ == list
-            ):
-                sub_options = create_query_options(rel_model, subfields)
-                options.append(
-                    selectinload(getattr(model, field)).options(*sub_options)
-                )
-            else:
-                sub_options = create_query_options(rel_model, subfields)
-                options.append(joinedload(getattr(model, field)).options(*sub_options))
-
-        elif field in physical_fields:
-            options.append(load_only(getattr(model, field)))
-
-    return options
+def task_preprocess(data: dict, info: Info) -> dict:
+    if "assigner_id" not in data:
+        data["assigner_id"] = decode_jwt(info.context.user.id.access_token).get("sub")
+    return data
 
 
 def add_from_instance(cls: Type):
@@ -243,35 +170,30 @@ async def process_data_and_insert(
     model_class: Base,
     data: Any,
     function_name: str,
-    data_process_extra: Optional[Callable[[dict], dict]] = None,
-    process_extra_db: Optional[Callable[[Any], Any]] = None,
-    exc_fields: Optional[List[str]] = None
+    data_process_extra: Optional[Callable[[dict, Info], dict]] = None,
+    process_extra_db: Optional[Callable[[AsyncSession, dict], Any]] = None,
+    exc_fields: Optional[List[str]] = None,
 ) -> tuple:
     selected_fields = extract_selected_fields(info, snake_to_camel(function_name))
     normalized_operations = to_snake_case(selected_fields)
     selected_fields = normalized_operations.get(function_name, {})
     query_options = create_query_options(model_class, selected_fields)
-    data = data_process_extra(data) if data_process_extra else data
+
     data = data if isinstance(data, dict) else data.__dict__
+    data = data_process_extra(data, info) if data_process_extra else data
     obj, obj_id = await insert_entity(
         model_class, data, query_options, process_extra_db, exc_fields
     )
+
     return obj, obj_id, selected_fields
-
-
-def get_func_data(func: Callable) -> tuple[str, Type]:
-    function_name = func.__name__
-
-    signature = inspect.signature(func)
-    return_annotation = signature.return_annotation
-
-    return function_name, return_annotation
 
 
 def strawberry_insert(
     model_class: Base,
-    data_process_extra: Optional[Callable[[dict], dict]] = None,
-    process_extra_db: Optional[Callable[[Any], Any]] = None,
+    data_process_extra: Optional[Callable[[dict, Info], dict]] = None,
+    process_extra_db: Optional[
+        Callable[[AsyncSession, Union[int, UUID], dict], Any]
+    ] = None,
     exc_fields: List[str] = None,
     notify_kwargs: Optional[Dict[str, str]] = None,
     notify_from_data_kwargs: Optional[Dict[str, str]] = None,
@@ -283,16 +205,30 @@ def strawberry_insert(
         @wraps(func)
         async def wrapper(self, info: Info, data: dict) -> Any:
             if need_validation:
-                await validate_permission(info, model_class.__tablename__, "insert")
+                await validate_permission(info, model_class.__tablename__, "create")
             function_name, result_type = get_func_data(func)
 
             obj, obj_id, selected_fields = await process_data_and_insert(
-                info, model_class, data, function_name, data_process_extra, process_extra_db, exc_fields
+                info,
+                model_class,
+                data,
+                function_name,
+                data_process_extra,
+                process_extra_db,
+                exc_fields,
             )
 
-            await process_notifications(
-                info, data, notify_from_data_kwargs, notify_kwargs, notify_subject, model_class, obj_id, need_update
-            )
+            if notify_subject:
+                await process_notifications(
+                    info,
+                    data,
+                    notify_from_data_kwargs,
+                    notify_kwargs,
+                    notify_subject,
+                    model_class,
+                    obj_id,
+                    need_update,
+                )
 
             return result_type.from_instance(obj, selected_fields)
 
@@ -333,23 +269,22 @@ def strawberry_update(model_class: Base):
     return decorator
 
 
-async def validate_permission(info: Info, entity: str, permission: str):
-    try:
-        token = info.context.get("auth_token").replace("Bearer ", "")
-        print(token)
-        user = await get_user_by_token(token)
-    except (ExpiredSignatureError, DecodeError):
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED)
-    entity_permissions = user.role.permissions.get(entity)
-    if permission not in entity_permissions:
-        raise HTTPException(status_code=HTTP_403_FORBIDDEN)
-
-
-def strawberry_delete(model_class: Base, full_delete: bool):
+def strawberry_delete(
+    model_class: Base,
+    full_delete_param: bool = None,
+    del_func: Callable[[AsyncSession, Union[int, UUID]], Any] = None
+):
     def decorator(func: Callable):
         @wraps(func)
-        async def wrapper(self, info: Info, item_id: Union[int, UUID]):
+        async def wrapper(self, item_id: Union[int, UUID], info: Info):
             await validate_permission(info, model_class.__tablename__, "delete")
+            full_delete = (
+                full_delete_param
+                if full_delete_param is not None
+                else "is_active" not in model_class.__dict__.get("__annotations__")
+            )
+            print(full_delete)
+
             function_name, result_type = get_func_data(func)
             selected_fields = extract_selected_fields(
                 info, snake_to_camel(function_name)
@@ -358,20 +293,19 @@ def strawberry_delete(model_class: Base, full_delete: bool):
             selected_fields = normalized_operations.get(function_name, {})
 
             query_options = create_query_options(model_class, selected_fields)
-            instances = await find_objs(
-                model_class, {"id": item_id}, query_options
-            )
+            instances = await find_objs(model_class, {"id": item_id}, query_options)
             async with async_session_maker() as session:
-                if full_delete:
-                    await delete_object(session, item_id, model_class)
+                if del_func is None:
+                    if full_delete:
+                        await delete_object(session, item_id, model_class)
+                    else:
+                        await soft_delete(session, item_id, model_class)
                 else:
-                    await soft_delete(session, item_id, model_class)
-            if instances:
-                return [
-                    result_type.from_instance(instance, selected_fields)
-                    for instance in instances
-                ]
-            return []
+                    await del_func(session, item_id)
+            try:
+                return result_type.from_instance(instances[0], selected_fields)
+            except IndexError:
+                raise HTTPException(status_code=404)
 
         return wrapper
 

@@ -44,16 +44,22 @@ logging.basicConfig(level=logging.INFO)
 class Query:
     @strawberry.field
     async def request_change_password(
-        self, info: strawberry.types.Info, find_data: UserFindType,
+        self,
+        info: strawberry.types.Info,
+        find_data: UserFindType,
     ) -> bool:
         user = await find_user_by_search_data(find_data.__dict__)
-        token = await send_request_change_password(user.email, info.context["nats_client"])
+        token = await send_request_change_password(
+            user.email, info.context["nats_client"]
+        )
         async with get_redis() as redis:
             await token_to_redis(redis, user.id, token)
         return True
 
     @strawberry.field
-    async def auth_user(self, info: strawberry.types.Info, auth_data: UserAuthType) -> JSON:
+    async def auth_user(
+        self, info: strawberry.types.Info, auth_data: UserAuthType
+    ) -> JSON:
         user = await authenticate_user(auth_data.email, auth_data.password)
         info.context["response"], access_token = await authenticate(info, user)
 

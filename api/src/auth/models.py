@@ -7,8 +7,9 @@ from sqlalchemy.dialects.postgresql import JSON, BYTEA
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.database import Base
-from my_type_notation import added_at, intpk
+from db_types import added_at, intpk
 from task.models import UserTask, Task, Group  # noqa
+from organization.models import Organization
 
 
 class User(Base):
@@ -32,17 +33,15 @@ class User(Base):
     tasks = relationship(
         "Task", back_populates="assignees", uselist=True, secondary="user_task"
     )
-    task_created = relationship("Task", back_populates="assigner", uselist=True)
-    organization_id: Mapped[int] = mapped_column(
-        ForeignKey("organization.id"), nullable=True
+    task_created = relationship(
+        "Task", back_populates="assigner", uselist=True, cascade="all, delete-orphan"
     )
-    organization = relationship("Organization", back_populates="staff", uselist=False)
+    organizations: Mapped["Organization"] = relationship(
+        "Organization", back_populates="staff", uselist=True, secondary="user_org"
+    )
     pathfile: Mapped[str] = mapped_column(nullable=True)
-    # oauth_accounts: Mapped[List[OAuthAccount]] = relationship(
-    #     "OAuthAccount"
-    # )
     groups: Mapped[List["Group"]] = relationship(
-        "Group", uselist=True, back_populates="user"
+        "Group", uselist=True, back_populates="user", cascade="all, delete-orphan"
     )
     github_name: Mapped[str] = mapped_column(nullable=True)
 

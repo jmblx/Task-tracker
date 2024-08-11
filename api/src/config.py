@@ -54,6 +54,8 @@ GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 # NATS_URL = "nats://localhost:4222"
 
+API_ADMIN_PWD = os.environ.get("API_ADMIN_PWD")
+
 
 class AuthJWT(BaseModel):
     private_key_path: Path = BASE_DIR / "certs" / "jwt-private.pem"
