@@ -1,6 +1,7 @@
 from typing import Union, List, Any, Callable, Tuple
 from uuid import UUID
 
+from fastapi import HTTPException
 from slugify import slugify
 from sqlalchemy import update, exc, select, insert, asc, desc, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -210,7 +211,12 @@ async def full_delete_group(session: AsyncSession, obj_id: Union[int]):
 async def full_delete_user(session: AsyncSession, obj_id: Union[UUID]):
     orgs = (await session.execute(select(UserOrg).where(UserOrg.user_id == obj_id))).scalars().all()
     users_org = [org.id for org in orgs if "admin" in org.permissions]
-    await session.execute(delete(UserOrg).where(UserOrg.id.in_(users_org)))
+    if users_org:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User is admin of orgs: {' '.join(map(str, users_org))}"
+        )
+    # await session.execute(delete(UserOrg).where(UserOrg.id.in_(users_org)))
     await session.execute(delete(UserTask).where(UserTask.user_id == obj_id))
     groups = (await (session.execute(select(Group).where(Group.user_id == obj_id)))).scalars().all()
     project_groups, user_groups = [], []
