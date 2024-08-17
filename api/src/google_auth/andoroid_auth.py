@@ -1,12 +1,13 @@
-from typing import Callable
-
-from strawberry import Info
-from strawberry.scalars import JSON
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from auth.models import User
-from gql.gql_types import UserType, GoogleRegDTO
+from gql.gql_types import GoogleRegDTO, UserType
 from gql.graphql_utils import process_data_and_insert
 from utils import get_func_data
+
+if TYPE_CHECKING:
+    from strawberry import Info
 
 
 def google_register(func: Callable) -> Callable:
@@ -21,7 +22,6 @@ def google_register(func: Callable) -> Callable:
             if data_dict.get("familyName") is not None
             else None
         )
-        print(data_dict)
 
         obj, _, selected_fields = await process_data_and_insert(
             info, User, data_dict, function_name=function_name
@@ -31,12 +31,5 @@ def google_register(func: Callable) -> Callable:
         #     await process_notifications(info, data_dict, obj)
 
         return result_type.from_instance(obj, selected_fields)
-
-    return wrapper
-
-
-def google_auth(func: Callable) -> Callable:
-    async def wrapper(self, info: "Info", data: "GoogleRegDTO") -> JSON:
-        authenticate_user
 
     return wrapper

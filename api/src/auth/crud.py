@@ -15,7 +15,9 @@ async def get_user_by_email(email: str) -> User:
 
 
 async def find_user_by_search_data(find_data: dict) -> User:
-    user = await find_objs(User, find_data, [load_only(User.id), load_only(User.email)])
+    user = await find_objs(
+        User, find_data, [load_only(User.id), load_only(User.email)]
+    )
     if user is None:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user[0]

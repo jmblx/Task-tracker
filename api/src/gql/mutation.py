@@ -1,50 +1,50 @@
+import secrets
 from uuid import UUID
 
 import strawberry
 from strawberry import Info
-import secrets
+from strawberry.scalars import JSON
 
-from auth.models import User, Role
+from auth.models import Role, User
 from auth.reset_pwd_utils import set_new_pwd
-from config import GOOGLE_OAUTH_CLIENT_ID
+from db.utils import full_delete_group, full_delete_user, get_user_by_id
+from google_auth.andoroid_auth import google_register
+from gql.gql_types import (
+    GoogleRegDTO,
+    GroupCreateType,
+    GroupType,
+    GroupUpdateType,
+    OrganizationCreateType,
+    OrganizationType,
+    OrganizationUpdateType,
+    ProjectCreateType,
+    ProjectType,
+    ProjectUpdateType,
+    RoleCreateType,
+    RoleType,
+    RoleUpdateType,
+    TaskCreateType,
+    TaskType,
+    TaskUpdateType,
+    UserCreateType,
+    UserType,
+    UserUpdateType,
+)
+from gql.graphql_utils import (
+    decrease_task_time_by_id,
+    process_project_staff,
+    process_task_assignees,
+    strawberry_delete,
+    strawberry_insert,
+    strawberry_update,
+    task_preprocess,
+)
 from myredis.redis_config import get_redis
 from myredis.utils import get_user_id_from_reset_pwd_token
 from organization.models import Organization
 from project.models import Project
-from task.models import Task, Group
-from gql.gql_types import (
-    UserCreateType,
-    UserUpdateType,
-    RoleCreateType,
-    RoleUpdateType,
-    OrganizationCreateType,
-    OrganizationUpdateType,
-    ProjectCreateType,
-    ProjectUpdateType,
-    TaskCreateType,
-    TaskUpdateType,
-    GroupUpdateType,
-    GroupCreateType,
-    RoleType,
-    OrganizationType,
-    ProjectType,
-    TaskType,
-    GroupType,
-    UserType,
-    GoogleRegDTO,
-)
+from task.models import Group, Task
 from utils import hash_user_pwd
-from gql.graphql_utils import (
-    process_task_assignees,
-    strawberry_insert,
-    decrease_task_time_by_id,
-    strawberry_update,
-    strawberry_delete,
-    process_project_staff,
-    task_preprocess,
-)
-from db.utils import get_user_by_id, full_delete_group, full_delete_user
-from google_auth.andoroid_auth import google_register
 
 
 @strawberry.type
@@ -74,12 +74,26 @@ class Mutation:
     @strawberry_update(Role)
     async def update_role(
         self, info: Info, item_id: int, data: RoleUpdateType
+    ) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_update(Role)
+    async def update_role_with_response(
+        self, info: Info, item_id: int, data: RoleUpdateType
     ) -> RoleType:
         pass
 
     @strawberry.mutation
     @strawberry_delete(Role)
-    async def delete_role(self, info: Info, item_id: int) -> RoleType:
+    async def delete_role(self, info: Info, item_id: int) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_delete(Role)
+    async def delete_role_with_response(
+        self, info: Info, item_id: int
+    ) -> RoleType:
         pass
 
     @strawberry.mutation
@@ -90,26 +104,42 @@ class Mutation:
         notify_kwargs={"email_confirmation_token": secrets.token_urlsafe(32)},
         notify_from_data_kwargs={"email": "email"},
         notify_subject="email.confirmation",
-        need_validation=False,
+        validation=False,
     )
     async def add_user(self, info: Info, data: UserCreateType) -> UserType:
         pass
 
     @strawberry.mutation
     @google_register
-    async def google_register(self, info: Info, data: GoogleRegDTO) -> UserType:
+    async def google_register(
+        self, info: Info, data: GoogleRegDTO
+    ) -> UserType:
         pass
 
     @strawberry.mutation
     @strawberry_update(User)
     async def update_user(
         self, info: Info, item_id: UUID, data: UserUpdateType
+    ) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_update(User)
+    async def update_user_with_response(
+        self, info: Info, item_id: int, data: UserUpdateType
     ) -> UserType:
         pass
 
     @strawberry.mutation
     @strawberry_delete(User)
-    async def delete_user(self, info: Info, item_id: UUID) -> UserType:
+    async def delete_user(self, info: Info, item_id: int) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_delete(User)
+    async def delete_user_with_response(
+        self, info: Info, item_id: UUID
+    ) -> UserType:
         pass
 
     @strawberry.mutation
@@ -119,7 +149,9 @@ class Mutation:
 
     @strawberry.mutation
     @strawberry_insert(
-        Organization, process_extra_db=process_project_staff, exc_fields=["staff"]
+        Organization,
+        process_extra_db=process_project_staff,
+        exc_fields=["staff"],
     )
     async def add_organization(
         self, info: Info, data: OrganizationCreateType
@@ -130,29 +162,59 @@ class Mutation:
     @strawberry_update(Organization)
     async def update_organization(
         self, info: Info, item_id: int, data: OrganizationUpdateType
+    ) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_update(Organization)
+    async def update_organization_with_response(
+        self, info: Info, item_id: int, data: OrganizationUpdateType
     ) -> OrganizationType:
         pass
 
     @strawberry.mutation
     @strawberry_delete(Organization)
-    async def delete_organization(self, info: Info, item_id: int) -> OrganizationType:
+    async def delete_organization(self, info: Info, item_id: int) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_delete(Organization)
+    async def delete_organization_with_response(
+        self, info: Info, item_id: int
+    ) -> OrganizationType:
         pass
 
     @strawberry.mutation
     @strawberry_insert(Project)
-    async def add_project(self, info: Info, data: ProjectCreateType) -> ProjectType:
+    async def add_project(
+        self, info: Info, data: ProjectCreateType
+    ) -> ProjectType:
         pass
 
     @strawberry.mutation
     @strawberry_update(Project)
     async def update_project(
         self, info: Info, item_id: int, data: ProjectUpdateType
+    ) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_update(Project)
+    async def update_project_with_response(
+        self, info: Info, item_id: int, data: ProjectUpdateType
     ) -> ProjectType:
         pass
 
     @strawberry.mutation
     @strawberry_delete(Project)
-    async def delete_project(self, info: Info, item_id: int) -> ProjectType:
+    async def delete_project(self, info: Info, item_id: int) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_delete(Project)
+    async def delete_project_with_response(
+        self, info: Info, item_id: int
+    ) -> ProjectType:
         pass
 
     @strawberry.mutation
@@ -169,12 +231,26 @@ class Mutation:
     @strawberry_update(Task)
     async def update_task(
         self, info: Info, item_id: int, data: TaskUpdateType
+    ) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_update(Task)
+    async def update_task_with_response(
+        self, info: Info, item_id: int, data: TaskUpdateType
     ) -> TaskType:
         pass
 
     @strawberry.mutation
     @strawberry_delete(Task)
-    async def delete_task(self, info: Info, item_id: int) -> TaskType:
+    async def delete_task(self, info: Info, item_id: int) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_delete(Task)
+    async def delete_task_with_response(
+        self, info: Info, item_id: int
+    ) -> TaskType:
         pass
 
     @strawberry.mutation
@@ -191,12 +267,24 @@ class Mutation:
     @strawberry_update(Group)
     async def update_group(
         self, info: Info, item_id: int, data: GroupUpdateType
+    ) -> JSON:
+        pass
+
+    @strawberry.mutation
+    @strawberry_update(Group)
+    async def update_group_with_response(
+        self, info: Info, item_id: int, data: GroupUpdateType
     ) -> GroupType:
         pass
 
     @strawberry.mutation
+    @strawberry_delete(Group)
+    async def delete_group(self, info: Info, item_id: int) -> JSON:
+        pass
+
+    @strawberry.mutation
     @strawberry_delete(Group, del_func=full_delete_group)
-    async def delete_group(
+    async def delete_group_with_response(
         self, info: Info, item_id: int
     ) -> GroupType:
         pass

@@ -1,27 +1,25 @@
-from typing import Dict
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from nats.aio.client import Client as NATS
+from nats.aio.client import Client
 
 # from logstash import TCPLogstashHandler
 from starlette.requests import Request
+from starlette_exporter import PrometheusMiddleware, handle_metrics
 from strawberry.fastapi import GraphQLRouter
 
+import db.logs  # noqa: F401
 from auth.custom_auth_router import router as auth_router
 from config import NATS_URL
+from gql.graphql_schema import schema
 from middleware_utils import form_state
 
 # from auth.jwt_auth import router as jwt_router
 from speech_task.router import router as speech_task_router
-from gql.graphql_schema import schema
 from user_data.router import router as profile_router
-from auth.google_auth import router as google_auth_router
-
 
 app = FastAPI(title="requests proceed API")
 
-nats_client = NATS()
+nats_client = Client()
 
 
 @app.on_event("startup")
@@ -37,7 +35,6 @@ async def shutdown_event():
 app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(speech_task_router)
-app.include_router(google_auth_router)
 
 
 @app.middleware("http")
@@ -47,11 +44,10 @@ async def add_auth_token_to_context(request: Request, call_next):
         {"authorization": "auth_token", "fingerprint": "fingerprint"},
         {"refreshToken": "refresh_token"},
     )
-    response = await call_next(request)
-    return response
+    return await call_next(request)
 
 
-async def get_context(request: Request) -> Dict:
+async def get_context(request: Request) -> dict:
     return {
         "auth_token": request.state.auth_token,
         "refresh_token": request.state.refresh_token,
@@ -63,6 +59,9 @@ async def get_context(request: Request) -> Dict:
 graphql_app = GraphQLRouter(schema, context_getter=get_context)
 
 app.include_router(graphql_app, prefix="/graphql")
+
+app.add_middleware(PrometheusMiddleware)
+app.add_route("/metrics", handle_metrics)
 
 origins = ["*"]
 app.add_middleware(

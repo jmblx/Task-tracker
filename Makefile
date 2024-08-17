@@ -34,6 +34,12 @@ up-non-log: check_docker
 down-non-log: check_docker
 	docker-compose -f ./docker-compose-non-log.yml down
 
+up-dev: check_docker
+	docker-compose -f ./docker-compose-local-dev.yml up --build
+
+down-dev: check_docker
+	docker-compose -f ./docker-compose-local-dev.yml down
+
 # Установка зависимостей с помощью poetry и создание виртуального окружения
 deps:
 	poetry install

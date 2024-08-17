@@ -1,69 +1,41 @@
 import inspect
-import os
 import re
-from typing import Any, Dict, Callable, Type, Tuple, List, Union, get_type_hints
+from collections.abc import Callable
+from types import NoneType
+from typing import (
+    Any,
+    Protocol,
+    TypeVar,
+    get_type_hints,
+)
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-import shutil
-from PIL import Image
 from sqlalchemy.orm import (
-    class_mapper,
     ColumnProperty,
     RelationshipProperty,
-    selectinload,
+    class_mapper,
     joinedload,
     load_only,
+    selectinload,
 )
 
 from auth.jwt_utils import hash_password
-from task.models import Task, Group
 from auth.models import User
-from db.database import async_session_maker, Base
+from db.database import Base, async_session_maker
+from task.models import Group, Task
+
+GqlType = TypeVar("GqlType", bound="GqlProtocol")
 
 
-async def create_upload_avatar(
-    object_id,
-    file,
-    class_,
-    path: str,
-):
-    async with async_session_maker() as session:
-        object = await session.get(class_, object_id)
-        save_path = os.path.join(path, f"object{object.id}{file.filename}")
-
-        with open(save_path, "wb") as new_file:
-            shutil.copyfileobj(file.file, new_file)
-
-        with Image.open(save_path) as img:
-            img = img.resize((350, 350))
-            new_save_path = os.path.splitext(save_path)[0] + ".webp"
-            img.save(new_save_path, "WEBP")
-
-        # Удаляем старый файл
-        os.remove(save_path)
-
-        # Обновляем путь к файлу в объекте
-        object.pathfile = new_save_path
-        await session.commit()
-
-    return new_save_path
-
-
-async def get_object_images(
-    class_: Any,
-    object_ids: str,
-):
-    async with async_session_maker() as session:
-        object_ids = object_ids.split(",")
-        object_ids = list(map(lambda x: int(x), object_ids))
-        images = {
-            f"{(class_.__name__).lower()}{object_id}": (
-                await session.get(class_, object_id)
-            ).pathfile
-            for object_id in object_ids
-        }
-        return images
+class GqlProtocol(Protocol):
+    @classmethod
+    def from_instance(
+        cls: type[GqlType], instance: Any, selected_fields: Any
+    ) -> GqlType:
+        raise NotImplementedError(
+            "this method must be implemented for using it as graphql read type"
+        )
 
 
 def create_task_data(user: User, task: Task, group: Group):
@@ -78,7 +50,9 @@ def create_task_data(user: User, task: Task, group: Group):
     }
 
 
-async def prepare_data_mailing(user: User, task: Task, group: Group, redis) -> Dict:
+async def prepare_data_mailing(
+    user: User, task: Task, group: Group, redis
+) -> dict:
     if await redis.smembers(f"auth:{user.tg_id}"):
         return {
             str(user.tg_id): create_task_data(
@@ -108,13 +82,15 @@ async def hash_user_pwd(session: AsyncSession, user_id: UUID, data: dict):
     await session.commit()
 
 
-def get_func_data(func: Callable) -> tuple[str, Type]:
+def get_func_data(
+    func: Callable,
+) -> tuple[str, type[GqlProtocol] | NoneType]:
     function_name = func.__name__
 
     signature = inspect.signature(func)
-    return_annotation = signature.return_annotation
+    ret_annotation: type[GqlProtocol] | NoneType = signature.return_annotation
 
-    return function_name, return_annotation
+    return function_name, ret_annotation
 
 
 def extract_selected_fields(info, field_name):
@@ -140,8 +116,10 @@ def process_selections(selections):
     return fields
 
 
-def get_model_fields(model: Any) -> Tuple[List[str], Dict[str, Any]]:
-    """Возвращает кортеж из двух списков: физических полей и полей отношений."""
+def get_model_fields(model: Any) -> tuple[list[str], dict[str, Any]]:
+    """Возвращает кортеж из двух списков:
+    физических полей и полей отношений.
+    """
     mapper = class_mapper(model)
     physical_fields = []
     relationship_fields = {}
@@ -173,7 +151,7 @@ def camel_to_snake(name):
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def to_snake_case(data, keep_top_level_keys=False) -> Union[dict, list]:
+def to_snake_case(data, *, keep_top_level_keys=False) -> dict | list:
     """Преобразует ключи словаря и его вложенных словарей в snake_case"""
     if isinstance(data, dict):
         new_dict = {}
@@ -188,7 +166,8 @@ def to_snake_case(data, keep_top_level_keys=False) -> Union[dict, list]:
 
 
 def convert_dict_top_level_to_snake_case(data):
-    """Преобразует только вложенные ключи в snake_case, ключи первого уровня оставляет неизменными"""
+    """Преобразует только вложенные ключи в snake_case,
+    ключи первого уровня оставляет неизменными"""
     if isinstance(data, dict):
         new_dict = {}
         for key, value in data.items():
@@ -198,8 +177,9 @@ def convert_dict_top_level_to_snake_case(data):
         return data
 
 
-def create_query_options(model: Any, fields: Dict[str, Any]) -> List:
-    """Рекурсивно создает опции запроса для загрузки нужных полей и вложенных отношений."""
+def create_query_options(model: Any, fields: dict[str, Any]) -> list:
+    """Рекурсивно создает опции запроса для загрузки
+    нужных полей и вложенных отношений."""
     physical_fields, relationship_fields = get_model_fields(model)
     options = []
 
@@ -218,7 +198,9 @@ def create_query_options(model: Any, fields: Dict[str, Any]) -> List:
                 )
             else:
                 sub_options = create_query_options(rel_model, subfields)
-                options.append(joinedload(getattr(model, field)).options(*sub_options))
+                options.append(
+                    joinedload(getattr(model, field)).options(*sub_options)
+                )
 
         elif field in physical_fields:
             options.append(load_only(getattr(model, field)))

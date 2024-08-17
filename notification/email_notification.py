@@ -2,7 +2,7 @@ import logging
 from email.message import EmailMessage
 import aiosmtplib
 
-from config import SMTP_HOST, SMTP_PORT, SMTP_PASSWORD, SMTP_USER, BACKEND_URL
+from config import SMTP_HOST, SMTP_PORT, SMTP_PASSWORD, SMTP_USER
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,16 +14,18 @@ subject_email_routing = {
         используя эту почту, то перейдите по следующей ссылке:
         BACKEND_URL/custom/email-confirmation/email_confirmation_token
         чтобы подтвердить регистрацию.""",
-        "subject": "Подтверждение почты"
+        "subject": "Подтверждение почты",
     },
     "reset_password": {
         "text": """
         Здравствуйте! Кто-то пытается сменить пароль по этой почте,
-        вот ссылка, по которой нужно перейти, чтобы сменить пароль: BACKEND_URL/custom/reset-password/token
+        вот ссылка, по которой нужно перейти, чтобы сменить пароль:
+        BACKEND_URL/custom/reset-password/token
         длительность ссылки = 15 минут
-        если это не вы, то возможно к вашему аккаунту пытаются получить доступ злоумышленники.""",
-        "subject": "Сброс пароля"
-    }
+        если это не вы, то возможно к вашему аккаунту пытаются
+        получить доступ злоумышленники.""",
+        "subject": "Сброс пароля",
+    },
 }
 
 

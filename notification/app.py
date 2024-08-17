@@ -1,9 +1,9 @@
-import logging
-import json
 import asyncio
-import nats
+import json
+import logging
 
-from config import NATS_URL, BACKEND_URL
+import nats
+from config import BACKEND_URL, NATS_URL
 from email_notification import send_email
 
 logging.basicConfig(level=logging.INFO)
@@ -14,7 +14,7 @@ subjects = ["email.confirmation", "email.reset_password"]
 
 async def message_handler(msg):
     subject = msg.subject
-    data = json.loads(msg.data.decode('utf-8'))
+    data = json.loads(msg.data.decode("utf-8"))
     email = data.pop("email")
 
     if email and subject:
@@ -22,7 +22,9 @@ async def message_handler(msg):
             await send_email(email, subject, BACKEND_URL=BACKEND_URL, **data)
             logger.info(f"Email sent to {email} for subject {subject}")
         except Exception as e:
-            logger.error(f"Failed to send email to {email} for subject {subject}: {e}")
+            logger.error(
+                f"Failed to send email to {email} for subject {subject}: {e}"
+            )  # noqa: E501
 
 
 async def run_worker():

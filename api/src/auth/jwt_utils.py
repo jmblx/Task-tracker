@@ -1,8 +1,8 @@
-import uuid
 from datetime import datetime, timedelta
 
 import bcrypt
 import jwt
+from pytz import timezone
 
 from config import settings
 
@@ -15,7 +15,8 @@ def encode_jwt(
     expire_timedelta: timedelta | None = None,
 ) -> str:
     to_encode = payload.copy()
-    now = datetime.utcnow()
+    tz = timezone("Europe/Moscow")
+    now = datetime.now(tz)
     if expire_timedelta:
         expire = now + expire_timedelta
     else:
@@ -24,12 +25,11 @@ def encode_jwt(
         exp=expire,
         iat=now,
     )
-    encoded = jwt.encode(
+    return jwt.encode(
         to_encode,
         private_key,
         algorithm=algorithm,
     )
-    return encoded
 
 
 def decode_jwt(
@@ -37,12 +37,11 @@ def decode_jwt(
     public_key: str = settings.auth_jwt.public_key_path.read_text(),
     algorithm: str = settings.auth_jwt.algorithm,
 ) -> dict:
-    decoded = jwt.decode(
+    return jwt.decode(
         token,
         public_key,
         algorithms=[algorithm],
     )
-    return decoded
 
 
 def hash_password(

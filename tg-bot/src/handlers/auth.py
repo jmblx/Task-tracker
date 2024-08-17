@@ -14,19 +14,16 @@ class Auth(StatesGroup):
     password = State()
 
 
-@user_private_router.callback_query(or_f(
-    F.data.startswith("auth")
-))
+@user_private_router.callback_query(or_f(F.data.startswith("auth")))
 async def auth(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.message.answer("Введите email аккаунта с сайта:")
     await state.set_state(Auth.email)
     await callback_query.answer()
 
 
-@user_private_router.message(StateFilter('*'), Command("отмена"))
-@user_private_router.message(StateFilter('*'), F.text.casefold() == "отмена")
+@user_private_router.message(StateFilter("*"), Command("отмена"))
+@user_private_router.message(StateFilter("*"), F.text.casefold() == "отмена")
 async def cancel_handler(message: types.Message, state: FSMContext) -> None:
-
     current_state = await state.get_state()
     if current_state is None:
         return
@@ -51,7 +48,9 @@ async def fix_password(message: types.Message, state: FSMContext, redis: Redis):
     token = login_response.get("access_token")
     if token:
         await redis.sadd(f"auth:{message.from_user.id}", token)
-        link_response = await link(tg_id=message.from_user.id, email=str(user_data["email"]))
+        link_response = await link(
+            tg_id=message.from_user.id, email=str(user_data["email"])
+        )
         await message.answer(
             f"Успех! Теперь вам будет приходить рассылка по заданиям из трекера времени."
         )

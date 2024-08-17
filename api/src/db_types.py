@@ -1,13 +1,15 @@
 import datetime
 from typing import Annotated
 
-from sqlalchemy import text, JSON, ForeignKey  # , ForeignKey
+from sqlalchemy import JSON, ForeignKey, text  # , ForeignKey
 from sqlalchemy.orm import mapped_column
 
 # Базовые аннотации для моделей БД
 added_at = Annotated[
     datetime.datetime,
-    mapped_column(nullable=True, server_default=text("TIMEZONE('utc', now())")),
+    mapped_column(
+        nullable=True, server_default=text("TIMEZONE('utc', now())")
+    ),
 ]
 
 intpk = Annotated[int, mapped_column(primary_key=True, autoincrement=True)]

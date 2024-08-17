@@ -1,26 +1,26 @@
-from typing import Optional, List, get_type_hints
+from typing import Optional
 from uuid import UUID
 
 import strawberry
-from strawberry import scalars
 from strawberry.scalars import JSON
 
 from gql.graphql_utils import add_from_instance
 from gql.scalars import DateTime, Duration
+from utils import GqlProtocol
 
 
 @strawberry.type
 @add_from_instance
-class RoleType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    permissions: Optional[strawberry.scalars.JSON] = None
+class RoleType(GqlProtocol):
+    id: int | None = None
+    name: str | None = None
+    permissions: strawberry.scalars.JSON | None = None
 
 
 @strawberry.input
 class RoleFindType:
-    id: Optional[int] = None
-    name: Optional[str] = None
+    id: int | None = None
+    name: str | None = None
 
 
 @strawberry.input
@@ -31,8 +31,8 @@ class RoleCreateType:
 
 @strawberry.input
 class RoleUpdateType:
-    name: Optional[str] = None
-    permissions: Optional[strawberry.scalars.JSON] = None
+    name: str | None = None
+    permissions: strawberry.scalars.JSON | None = None
 
 
 @strawberry.input
@@ -44,30 +44,30 @@ class UserAuthType:
 # Типы для User
 @strawberry.type
 @add_from_instance
-class UserType:
-    id: Optional[UUID] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    role_id: Optional[int] = None
-    email: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_verified: Optional[bool] = None
-    pathfile: Optional[str] = None
-    tg_id: Optional[str] = None
-    tg_settings: Optional[strawberry.scalars.JSON] = None
-    is_email_confirmed: Optional[bool] = None
-    registered_at: Optional[DateTime] = None
-    organizations: Optional[List["OrganizationType"]] = None
-    role: Optional[RoleType] = None
-    tasks: Optional[List["TaskType"]] = None  # Using string annotation here
+class UserType(GqlProtocol):
+    id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    role_id: int | None = None
+    email: str | None = None
+    is_active: bool | None = None
+    is_verified: bool | None = None
+    pathfile: str | None = None
+    tg_id: str | None = None
+    tg_settings: strawberry.scalars.JSON | None = None
+    is_email_confirmed: bool | None = None
+    registered_at: DateTime | None = None
+    organizations: list["OrganizationType"] | None = None
+    role: RoleType | None = None
+    tasks: list["TaskType"] | None = None  # Using string annotation here
 
 
 @strawberry.input
 class UserFindType:
-    id: Optional[UUID] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[str] = None
+    id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
 
 
 @strawberry.input
@@ -77,116 +77,116 @@ class UserCreateType:
     role_id: int
     email: str
     password: str
-    is_active: Optional[bool] = True
-    is_verified: Optional[bool] = True
-    pathfile: Optional[str] = None
-    tg_id: Optional[str] = None
-    tg_settings: Optional[strawberry.scalars.JSON] = None
-    github_name: Optional[str] = None
+    is_active: bool | None = True
+    is_verified: bool | None = True
+    pathfile: str | None = None
+    tg_id: str | None = None
+    tg_settings: strawberry.scalars.JSON | None = None
+    github_name: str | None = None
 
 
 @strawberry.input
 class GoogleRegDTO:
     email: str
-    givenName: str
-    familyName: str
-    emailVerified: bool
+    given_name: str
+    family_name: str | None = None
+    email_verified: bool
 
 
 @strawberry.input
 class UserUpdateType:
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    role_id: Optional[int] = None
-    email: Optional[str] = None
-    tg_id: Optional[str] = None
-    tg_settings: Optional[strawberry.scalars.JSON] = None
-    github_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    role_id: int | None = None
+    email: str | None = None
+    tg_id: str | None = None
+    tg_settings: strawberry.scalars.JSON | None = None
+    github_name: str | None = None
 
 
 @strawberry.type
 @add_from_instance
-class TaskType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    is_done: Optional[bool] = None
-    added_at: Optional[DateTime] = None
-    done_at: Optional[DateTime] = None
-    assigner_id: Optional[UUID] = None
-    color: Optional[str] = None
-    duration: Optional[Duration] = None
-    difficulty: Optional[str] = None
-    project_id: Optional[int] = None
-    group_id: Optional[int] = None
-    assignees: Optional[List["UserType"]] = None
+class TaskType(GqlProtocol):
+    id: int | None = None
+    name: str | None = None
+    description: str | None = None
+    is_done: bool | None = None
+    added_at: DateTime | None = None
+    done_at: DateTime | None = None
+    assigner_id: UUID | None = None
+    color: str | None = None
+    duration: Duration | None = None
+    difficulty: str | None = None
+    project_id: int | None = None
+    group_id: int | None = None
+    assignees: list["UserType"] | None = None
     assigner: Optional["UserType"] = None
 
 
 @strawberry.input
 class TaskFindType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    assigner_id: Optional[UUID] = None
-    color: Optional[str] = None
-    difficulty: Optional[str] = None
-    project_id: Optional[int] = None
-    group_id: Optional[int] = None
+    id: int | None = None
+    name: str | None = None
+    assigner_id: UUID | None = None
+    color: str | None = None
+    difficulty: str | None = None
+    project_id: int | None = None
+    group_id: int | None = None
 
 
 @strawberry.input
 class AssigneeType:
-    id: Optional[UUID] = None
-    github_data: Optional[JSON] = None
-    organization_id: Optional[int] = None
+    id: UUID | None = None
+    github_data: JSON | None = None
+    organization_id: int | None = None
 
 
 @strawberry.input
 class TaskCreateType:
     name: str
-    description: Optional[str] = None
-    is_done: Optional[bool] = None
-    assigner_id: Optional[UUID] = None
-    color: Optional[str] = None
+    description: str | None = None
+    is_done: bool | None = None
+    assigner_id: UUID | None = None
+    color: str | None = None
     duration: Duration
-    end_date: Optional[DateTime] = None
-    difficulty: Optional[str] = None
-    project_id: Optional[int] = None
-    group_id: Optional[int] = None
-    assignees: Optional[List[AssigneeType]] = None
+    end_date: DateTime | None = None
+    difficulty: str | None = None
+    project_id: int | None = None
+    group_id: int | None = None
+    assignees: list[AssigneeType] | None = None
 
 
 @strawberry.input
 class TaskUpdateType:
-    name: Optional[str] = None
-    description: Optional[str] = None
-    is_done: Optional[bool] = None
-    assigner_id: Optional[UUID] = None
-    color: Optional[str] = None
-    duration: Optional[Duration] = None
-    end_date: Optional[DateTime] = None
-    difficulty: Optional[str] = None
-    project_id: Optional[int] = None
-    group_id: Optional[int] = None
+    name: str | None = None
+    description: str | None = None
+    is_done: bool | None = None
+    assigner_id: UUID | None = None
+    color: str | None = None
+    duration: Duration | None = None
+    end_date: DateTime | None = None
+    difficulty: str | None = None
+    project_id: int | None = None
+    group_id: int | None = None
 
 
 @strawberry.type
 @add_from_instance
-class OrganizationType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    staff: Optional[List[UserType]] = None
+class OrganizationType(GqlProtocol):
+    id: int | None = None
+    name: str | None = None
+    description: str | None = None
+    staff: list[UserType] | None = None
     # workers: Optional[List[UserType]] = None
     # managers: Optional[List[UserType]] = None
-    projects: Optional[List["ProjectType"]] = None
+    projects: list["ProjectType"] | None = None
 
 
 @strawberry.input
 class OrganizationFindType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    owner_id: Optional[UUID] = None
+    id: int | None = None
+    name: str | None = None
+    owner_id: UUID | None = None
 
 
 @strawberry.input
@@ -200,61 +200,61 @@ class StaffType:
 class OrganizationCreateType:
     name: str
     description: str
-    staff: Optional[List[StaffType]] = None
+    staff: list[StaffType] | None = None
 
 
 @strawberry.input
 class OrganizationUpdateType:
-    name: Optional[str] = None
-    description: Optional[str] = None
-    staff: Optional[List[UUID]] = None
+    name: str | None = None
+    description: str | None = None
+    staff: list[UUID] | None = None
 
 
 @strawberry.type
 @add_from_instance
-class ProjectType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    created_at: Optional[DateTime] = None
-    organization_id: Optional[int] = None
-    tasks: Optional[List[TaskType]] = None  # Using actual TaskType here
+class ProjectType(GqlProtocol):
+    id: int | None = None
+    name: str | None = None
+    description: str | None = None
+    created_at: DateTime | None = None
+    organization_id: int | None = None
+    tasks: list[TaskType] | None = None  # Using actual TaskType here
 
 
 @strawberry.input
 class ProjectFindType:
-    id: Optional[int] = None
-    name: Optional[str] = None
+    id: int | None = None
+    name: str | None = None
 
 
 @strawberry.input
 class ProjectCreateType:
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     organization_id: int
 
 
 @strawberry.input
 class ProjectUpdateType:
-    name: Optional[str] = None
-    description: Optional[str] = None
-    organization_id: Optional[int] = None
+    name: str | None = None
+    description: str | None = None
+    organization_id: int | None = None
 
 
 @strawberry.type
 @add_from_instance
-class GroupType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    tasks: Optional[List[TaskType]] = None
-    user: Optional[UserType] = None
+class GroupType(GqlProtocol):
+    id: int | None = None
+    name: str | None = None
+    tasks: list[TaskType] | None = None
+    user: UserType | None = None
 
 
 @strawberry.input
 class GroupFindType:
-    id: Optional[int] = None
-    name: Optional[str] = None
-    user_id: Optional[UUID] = None
+    id: int | None = None
+    name: str | None = None
+    user_id: UUID | None = None
 
 
 @strawberry.input
@@ -265,8 +265,8 @@ class GroupCreateType:
 
 @strawberry.input
 class GroupUpdateType:
-    name: Optional[str] = None
-    user_id: Optional[UUID] = None
+    name: str | None = None
+    user_id: UUID | None = None
 
 
 @strawberry.input

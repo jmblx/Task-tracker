@@ -1,0 +1,114 @@
+services:
+
+  db:
+    image: postgres:15
+    container_name: db_app
+    command: -p 5432
+    expose:
+      - 5432
+    restart: always
+    env_file:
+      - api/.env-prod
+    networks:
+      - custom
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: redis_app
+    command: --port 6379
+    ports:
+      - "6379:6379"
+    expose:
+      - 6379
+    networks:
+      - custom
+
+  fastapi_app:
+    env_file:
+      - api/.env-prod
+    build:
+      context: api/
+#    image: menoitami/task-tracker
+    command: [ "/fastapi_app/docker/app.sh" ]
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
+    networks:
+      - custom
+    depends_on:
+      - db
+      - redis
+      - nats
+
+  nats:
+    image: nats
+    ports:
+      - "8222:8222"
+      - "6222:6222"
+      - "4222:4222"
+    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --http_port 8222 --port 4222"
+    networks:
+      - custom
+
+  notification_app:
+    env_file:
+      - notification/.env-prod
+#    build:
+#      context: notification/
+    image: menoitami/task-notification
+    command: [ "/notification_app/docker/app.sh" ]
+    networks:
+      - custom
+    depends_on:
+      - nats
+
+  prometheus:
+    image: prom/prometheus:v2.43.0
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    env_file:
+      - .env
+    depends_on:
+      - fastapi_app
+    networks:
+      - custom
+
+#  node_exporter:
+#    image: prom/node-exporter:latest
+#    container_name: node_exporter
+#    ports:
+#      - "9100:9100"
+#    networks:
+#      - custom
+
+  grafana:
+    image: grafana/grafana:8.5.22
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - grafana-config:/etc/grafana
+    depends_on:
+      - prometheus
+    restart: always
+    networks:
+      - custom
+    user: "0"
+
+networks:
+  custom:
+    driver: bridge
+
+volumes:
+  grafana-data:
+  grafana-config:
+  prometheus-data:
+  db-data:

@@ -1,16 +1,14 @@
-from typing import Optional
-
 from fastapi import HTTPException
 
 from auth.crud import get_user_by_email
 from auth.helpers import create_access_token
+from auth.jwt_utils import decode_jwt, validate_password
 from auth.models import User
-from auth.jwt_utils import validate_password, decode_jwt
 from db.utils import get_user_by_id
 from myredis.redis_config import get_redis
 
 
-async def authenticate_user(email: str, password: Optional[str] = None) -> User:
+async def auth_user(email: str, password: str | None = None) -> User:
     user = await get_user_by_email(email)
     if password and user and validate_password(password, user.hashed_password):
         return user
@@ -26,7 +24,9 @@ async def refresh_access_token(refresh_token: str, fingerprint: str) -> str:
     async with get_redis() as redis:
         token_data = await redis.hgetall(f"refresh_token:{jti}")
         if not token_data:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            raise HTTPException(
+                status_code=401, detail="Invalid refresh token"
+            )
 
         if token_data.get("fingerprint") != fingerprint:
             raise HTTPException(status_code=401, detail="Invalid fingerprint")

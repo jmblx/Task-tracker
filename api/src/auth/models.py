@@ -1,15 +1,13 @@
-from datetime import datetime
-from typing import List
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.dialects.postgresql import JSON, BYTEA
+from sqlalchemy.dialects.postgresql import BYTEA, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.database import Base
 from db_types import added_at, intpk
-from task.models import UserTask, Task, Group  # noqa
 from organization.models import Organization
+from task.models import Group
 
 
 class User(Base):
@@ -34,14 +32,23 @@ class User(Base):
         "Task", back_populates="assignees", uselist=True, secondary="user_task"
     )
     task_created = relationship(
-        "Task", back_populates="assigner", uselist=True, cascade="all, delete-orphan"
+        "Task",
+        back_populates="assigner",
+        uselist=True,
+        cascade="all, delete-orphan",
     )
     organizations: Mapped["Organization"] = relationship(
-        "Organization", back_populates="staff", uselist=True, secondary="user_org"
+        "Organization",
+        back_populates="staff",
+        uselist=True,
+        secondary="user_org",
     )
     pathfile: Mapped[str] = mapped_column(nullable=True)
-    groups: Mapped[List["Group"]] = relationship(
-        "Group", uselist=True, back_populates="user", cascade="all, delete-orphan"
+    groups: Mapped[list["Group"]] = relationship(
+        "Group",
+        uselist=True,
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
     github_name: Mapped[str] = mapped_column(nullable=True)
 
@@ -52,4 +59,6 @@ class Role(Base):
     id: Mapped[intpk]
     name: Mapped[str] = mapped_column(nullable=False)
     permissions: Mapped[dict] = mapped_column(JSON)
-    users: Mapped[List["User"]] = relationship(back_populates="role", uselist=True)
+    users: Mapped[list["User"]] = relationship(
+        back_populates="role", uselist=True
+    )

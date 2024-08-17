@@ -1,7 +1,7 @@
 import json
-from typing import Optional, Dict, Any
+from typing import Any
 
-from nats.aio.client import Client as NATS
+from nats.aio.client import Client
 from strawberry import Info
 
 from db.database import Base
@@ -9,11 +9,11 @@ from db.utils import default_update
 
 
 async def send_via_nats(
-    nats_client: NATS,
+    nats_client: Client,
     subject: str,
-    json_message: str = None,
-    data: dict = None,
-    string: str = None,
+    json_message: str | None = None,
+    data: dict | None = None,
+    string: str | None = None,
 ):
     if json_message:
         await nats_client.publish(subject, json_message.encode("utf-8"))
@@ -26,11 +26,12 @@ async def send_via_nats(
 async def process_notifications(
     info: Info,
     data: dict,
-    notify_from_data_kwargs: Optional[Dict[str, str]],
-    notify_kwargs: Optional[Dict[str, str]],
-    notify_subject: Optional[str],
+    notify_from_data_kwargs: dict[str, str] | None,
+    notify_kwargs: dict[str, str] | None,
+    notify_subject: str | None,
     model_class: Base,
     obj_id: Any,
+    *,
     need_update: bool,
 ) -> None:
     if notify_from_data_kwargs is not None:

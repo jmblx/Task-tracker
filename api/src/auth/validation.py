@@ -1,22 +1,24 @@
-from uuid import UUID
+from typing import TYPE_CHECKING
 
-from fastapi import Depends, HTTPException, Form
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from jwt import InvalidTokenError, ExpiredSignatureError, DecodeError
+from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 from starlette import status
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 from strawberry import Info
 
+from auth import jwt_utils
 from auth.crud import get_user_by_email
-from db.utils import get_user_by_id, get_user_by_token
 from auth.helpers import (
-    TOKEN_TYPE_FIELD,
     ACCESS_TOKEN_TYPE,
     REFRESH_TOKEN_TYPE,
+    TOKEN_TYPE_FIELD,
 )
-from auth import jwt_utils
 from auth.models import User
-from auth.schemas import UserAuth
+from db.utils import get_user_by_id, get_user_by_token
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/jwt/login/",
@@ -31,7 +33,7 @@ def get_current_token_payload(
             token=token,
         )
     except InvalidTokenError as e:
-        raise HTTPException(
+        raise HTTPException(  # noqa: B904
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"invalid token error: {e}",
         )
@@ -47,7 +49,8 @@ def validate_token_type(
         return True
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=f"invalid token type {current_token_type!r} expected {token_type!r}",
+        detail=f"invalid token type {current_token_type!r}"
+        f" expected {token_type!r}",
     )
 
 
@@ -129,11 +132,9 @@ async def validate_auth_user(
 async def validate_permission(info: Info, entity: str, permission: str):
     try:
         token = info.context.get("auth_token").replace("Bearer ", "")
-        print(token)
         user = await get_user_by_token(token)
     except (ExpiredSignatureError, DecodeError):
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED)
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED)  # noqa: B904
     entity_permissions = user.role.permissions.get(entity)
-    print(entity_permissions, permission, entity)
     if permission not in entity_permissions:
         raise HTTPException(status_code=HTTP_403_FORBIDDEN)

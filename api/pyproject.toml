@@ -11,20 +11,13 @@ fastapi = {extras = ["all"], version = "^0.110.1"}
 asyncpg = "^0.29.0"
 sqlalchemy = "^2.0.29"
 alembic = "^1.13.1"
-fastapi-users = {extras = ["sqlalchemy"], version = "^13.0.0"}
-asana = "^5.0.6"
 httpx-oauth = "^0.14.0"
 starlette-exporter = "^0.21.0"
-slugify = "^0.0.1"
-pillow = "^10.3.0"
-requests = "^2.31.0"
-bs4 = "^0.0.2"
 python-dotenv = "^1.0.1"
 strawberry-graphql = "^0.224.1"
 pendulum = "^3.0.0"
 gunicorn = "^21.2.0"
 redis = "^5.0.3"
-aiokafka = "^0.10.0"
 python-multipart = "^0.0.9"
 groq = "^0.8.0"
 pyjwt = {extras = ["crypto"], version = "^2.8.0"}
@@ -37,8 +30,71 @@ faststream = {extras = ["asyncio"], version = "^0.5.15"}
 nats-py = "^2.8.0"
 google-api-python-client = "^2.139.0"
 google-auth-oauthlib = "^1.2.1"
-
+aiohttp = "^3.10.3"
+bcrypt = "^4.2.0"
+pytz = "^2024.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^7.1.1"
+flake8-bugbear = "^24.4.26"
+flake8-comprehensions = "^3.15.0"
+flake8-quotes = "^3.4.0"
+isort = "^5.13.2"
+mypy = "^1.11.1"
+autoflake = "^2.3.1"
+ruff = "^0.6.0"
+black = "^24.8.0"
+pre-commit = "^3.8.0"
+
+[tool.black]
+line-length = 79
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 79
+target-version="py311"
+src = ["src"]
+include = ["src/**.py", "tests/**.py"]
+
+[tool.ruff.lint]
+ignore = [
+   "ARG",
+   "ANN",
+   "D",
+   "EM101",
+   "EM102",
+   "PT001",
+   "PT023",
+   "SIM108",
+   "SIM114",
+   "TRY003",
+   "PLW2901",
+   "RET505",
+   "PLR0913",
+   "UP038",
+   "TCH001",
+   "SLF001",
+   "COM812",
+   "ISC001",
+   "S101",
+   "RUF002",
+   "B008",
+   "E721",
+   "INP001",
+   "ERA001", #  проверка на докстринги
+   "RUF001", #  кириллица в докстрингах
+   "RUF003" #  кириллица в комментах
+]
+select = [
+  "ALL",
+]
+
+[tool.ruff.lint.isort]
+no-lines-before = ["local-folder"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"

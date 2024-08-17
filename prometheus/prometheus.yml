@@ -1,0 +1,40 @@
+global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 15s # By default, scrape targets every 15 seconds.
+  # scrape_timeout is set to the global default value (10s).
+
+# Default set of alerts. This file will be read by the Prometheus
+# server on startup and must be present.
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first.rules"
+  # - "second.rules"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+        - '${PROMETHEUS_TARGET}'  # Используем переменную окружения
+
+  - job_name: 'node_exporter'
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+        - '${NODE_EXPORTER_TARGET}'  # Используем переменную окружения
+
+  - job_name: 'starlette_exporter'
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+        - '${STARLETTE_EXPORTER_TARGET}'  # Используем переменную окружения
+    metrics_path: /metrics
+    scheme: http

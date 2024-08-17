@@ -79,20 +79,20 @@ async def consume() -> None:
                     )
 
                 if message:
-                    await bot.send_message(chat_id=int(telegram_id), text=message, parse_mode="HTML")
+                    await bot.send_message(
+                        chat_id=int(telegram_id), text=message, parse_mode="HTML"
+                    )
     finally:
         await consumer.stop()
 
 
-
 async def on_startup(bot):
-
     # run_param = False
     # if run_param:
     #     await drop_db()
     #
     # await create_db()
-    print('')
+    print("")
 
 
 async def on_shutdown(bot):
@@ -106,7 +106,9 @@ async def main():
     dp.update.middleware(RedisSession(os.getenv("REDIS_PATH", "redis://localhost")))
     await bot.delete_webhook(drop_pending_updates=True)
     # await bot.delete_my_commands(scope=types.BotCommandScopeAllPrivateChats())
-    polling = asyncio.create_task(dp.start_polling(bot, allowed_updates=ALLOWED_UPDATES))
+    polling = asyncio.create_task(
+        dp.start_polling(bot, allowed_updates=ALLOWED_UPDATES)
+    )
     consuming = asyncio.create_task(consume())
     await asyncio.gather(polling, consuming)
 

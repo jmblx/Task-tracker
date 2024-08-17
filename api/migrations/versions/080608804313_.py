@@ -5,10 +5,11 @@ Revises: 8450eb23487e
 Create Date: 2024-08-07 18:43:45.458676
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -27,7 +28,9 @@ def upgrade() -> None:
         sa.Column("organization_id", sa.Integer(), nullable=False),
         sa.Column("position", sa.String(), nullable=False),
         sa.Column(
-            "permissions", postgresql.JSON(astext_type=sa.Text()), nullable=False
+            "permissions",
+            postgresql.JSON(astext_type=sa.Text()),
+            nullable=False,
         ),
         sa.ForeignKeyConstraint(
             ["organization_id"], ["organization.id"], ondelete="CASCADE"
@@ -35,11 +38,15 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["user.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.drop_constraint("organization_owner_id_fkey", "organization", type_="foreignkey")
+    op.drop_constraint(
+        "organization_owner_id_fkey", "organization", type_="foreignkey"
+    )
     op.drop_column("organization", "owner_id")
     op.drop_constraint("user_organization_id_fkey", "user", type_="foreignkey")
     op.drop_column("user", "organization_id")
-    op.drop_constraint("user_task_user_id_fkey", "user_task", type_="foreignkey")
+    op.drop_constraint(
+        "user_task_user_id_fkey", "user_task", type_="foreignkey"
+    )
     op.create_foreign_key(
         None, "user_task", "user", ["user_id"], ["id"], ondelete="CASCADE"
     )
@@ -54,10 +61,16 @@ def downgrade() -> None:
     )
     op.add_column(
         "user",
-        sa.Column("organization_id", sa.INTEGER(), autoincrement=False, nullable=True),
+        sa.Column(
+            "organization_id", sa.INTEGER(), autoincrement=False, nullable=True
+        ),
     )
     op.create_foreign_key(
-        "user_organization_id_fkey", "user", "organization", ["organization_id"], ["id"]
+        "user_organization_id_fkey",
+        "user",
+        "organization",
+        ["organization_id"],
+        ["id"],
     )
     op.add_column(
         "organization",

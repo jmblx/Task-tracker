@@ -8,7 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.database import Base
 from db_types import added_at, intpk
-from project.models import Project  # noqa
 
 
 class Difficulty(enum.Enum):
@@ -16,7 +15,7 @@ class Difficulty(enum.Enum):
     medium = "Средняя"
     hard = "Сложная"
     challenging = "Требующая усилий"
-    complex = "Сложная"
+    complex = "Сложная"  # noqa: PIE796
 
 
 class Task(Base):
@@ -50,7 +49,9 @@ class Task(Base):
         ForeignKey("project.id", ondelete="CASCADE"), nullable=True
     )
     project = relationship("Project", uselist=False, back_populates="tasks")
-    group_id: Mapped[int] = mapped_column(ForeignKey("group.id", ondelete="CASCADE"), nullable=True)
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("group.id", ondelete="CASCADE"), nullable=True
+    )
     group = relationship("Group", uselist=False, back_populates="tasks")
 
 
@@ -73,8 +74,15 @@ class Group(Base):
 
     id: Mapped[intpk]
     name: Mapped[str]
-    tasks = relationship("Task", uselist=True, back_populates="group", cascade="all, delete-orphan")
+    tasks = relationship(
+        "Task",
+        uselist=True,
+        back_populates="group",
+        cascade="all, delete-orphan",
+    )
     user = relationship("User", uselist=False, back_populates="groups")
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"), nullable=True)
     project = relationship("Project", uselist=False, back_populates="groups")
-    project_id: Mapped[int] = mapped_column(ForeignKey("project.id"), nullable=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("project.id"), nullable=True
+    )

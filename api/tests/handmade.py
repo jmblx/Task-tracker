@@ -11,15 +11,13 @@ query {
 }
 """
 
-response = requests.post(url, json={"query": query})
+response = requests.post(url, json={"query": query}, timeout=5)
 
 cookies = response.cookies
 
-print("Response JSON:", response.json())
-print("Cookies:", cookies)
 
 refresh_token = cookies.get("refreshToken")
 if refresh_token:
-    print("Refresh Token:", refresh_token)
+    pass
 else:
-    print("Refresh Token not found in cookies.")
+    pass

@@ -1,10 +1,6 @@
-import os
+from pathlib import Path
 
-# Определяем текущую директорию скрипта
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+BASE_DIR = Path(__file__).resolve().parent
+PARENT_DIR = BASE_DIR.parent
 
-# Переходим на уровень выше
-PARENT_DIR = os.path.dirname(BASE_DIR)
-
-# Теперь создаем путь к папке images, которая находится на уровне выше
-IMAGES_DIR = os.path.join(PARENT_DIR, "images")
+IMAGES_DIR = PARENT_DIR / "images"

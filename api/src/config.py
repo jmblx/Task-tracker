@@ -27,8 +27,6 @@ DB_PASS = os.environ.get("DB_PASS")
 
 REDIS_HOST = os.environ.get("REDIS_HOST")
 REDIS_PORT = os.environ.get("REDIS_PORT")
-
-SECRET_AUTH = os.environ.get("SECRET_AUTH")
 #
 # SENTRY_URL = os.environ.get("SENTRY_URL")
 #
@@ -53,6 +51,11 @@ NATS_URL = os.environ.get("NATS_URL", "nats://localhost:4222")
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
 # NATS_URL = "nats://localhost:4222"
+
+YANDEX_PRIVATE_KEY = os.environ.get("YANDEX_PRIVATE_KEY")
+SERVICE_ACCOUNT_ID = os.environ.get("SERVICE_ACCOUNT_ID")
+KEY_ID = os.environ.get("KEY_ID")
+FOLDER_ID = os.environ.get("FOLDER_ID")
 
 API_ADMIN_PWD = os.environ.get("API_ADMIN_PWD")
 
