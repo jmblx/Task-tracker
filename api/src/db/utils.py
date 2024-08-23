@@ -19,46 +19,46 @@ async def update_object(
     data: dict,
     class_,
     obj_id: int | UUID,
+    session: AsyncSession,
     query_options: list | None = None,
 ) -> None | Any:
-    async with async_session_maker() as session:
-        update_data = {
-            key: value for key, value in data.items() if value is not None
-        }
-        try:
-            entity_id = (
-                (
-                    await session.execute(
-                        update(class_)
-                        .where(class_.id == obj_id)
-                        .values(update_data)
-                        .returning(class_.id)
-                    )
+    update_data = {
+        key: value for key, value in data.items() if value is not None
+    }
+    try:
+        entity_id = (
+            (
+                await session.execute(
+                    update(class_)
+                    .where(class_.id == obj_id)
+                    .values(update_data)
+                    .returning(class_.id)
                 )
-                .unique()
-                .scalar()
             )
-            await session.commit()
-        except exc.IntegrityError:
-            await session.rollback()
-            update_data["slug"] = f'{update_data["slug"]}-{obj_id}'
-            entity_id = await session.execute(
-                update(class_)
-                .where(class_.id == obj_id)
-                .values(update_data)
-                .returning(class_.id)
-            )
-            await session.commit()
-        if query_options:
-            query = select(class_)
-            for option in query_options or []:
-                query = query.options(option)
-            return (
-                (await session.execute(query.where(class_.id == entity_id)))
-                .unique()
-                .scalar()
-            )
-        return None
+            .unique()
+            .scalar()
+        )
+        await session.commit()
+    except exc.IntegrityError:
+        await session.rollback()
+        update_data["slug"] = f'{update_data["slug"]}-{obj_id}'
+        entity_id = await session.execute(
+            update(class_)
+            .where(class_.id == obj_id)
+            .values(update_data)
+            .returning(class_.id)
+        )
+        await session.commit()
+    if query_options:
+        query = select(class_)
+        for option in query_options or []:
+            query = query.options(option)
+        return (
+            (await session.execute(query.where(class_.id == entity_id)))
+            .unique()
+            .scalar()
+        )
+    return None
 
 
 async def default_update(model: Base, obj_id: int | UUID, data: dict):
@@ -78,6 +78,7 @@ async def default_update(model: Base, obj_id: int | UUID, data: dict):
 async def insert_entity(
     model_class: Base,
     data: dict,
+    session: AsyncSession,
     query_options: list | None = None,
     process_extra: Callable | None = None,
     exc_fields: list | None = None,
@@ -86,44 +87,42 @@ async def insert_entity(
     Формирующийся из запрошенных полей гибкий insert запрос,
      возвращающий объект с запрошенными данными
     """
-    async with async_session_maker() as session:
-        if exc_fields is None:
-            exc_fields = []
-        entity_data = {
-            key: value
-            for key, value in data.items()
-            if key not in exc_fields and value is not None
-        }
+    if exc_fields is None:
+        exc_fields = []
 
-        if hasattr(model_class, "id"):
-            stmt = (
-                insert(model_class)
-                .values(entity_data)
-                .returning(model_class.id)
-            )
-            result = await session.execute(stmt)
-            entity_id = result.scalar()
-        else:
-            entity = model_class(**entity_data)
-            session.add(entity)
-            await session.commit()
-            await session.refresh(entity)
-            entity_id = entity.id
+    entity_data = {
+        key: value
+        for key, value in data.items()
+        if key not in exc_fields and value is not None
+    }
 
-        if process_extra:
-            await process_extra(session, entity_id, data)
-
-        await session.commit()
-
-        query = select(model_class)
-        for option in query_options or []:
-            query = query.options(option)
-        entity = (
-            (await session.execute(query.where(model_class.id == entity_id)))
-            .unique()
-            .scalar()
+    if hasattr(model_class, "id"):
+        stmt = (
+            insert(model_class).values(entity_data).returning(model_class.id)
         )
-        return entity, entity_id
+        result = await session.execute(stmt)
+        entity_id = result.scalar()
+    else:
+        entity = model_class(**entity_data)
+        session.add(entity)
+        await session.commit()
+        await session.refresh(entity)
+        entity_id = entity.id
+
+    if process_extra:
+        await process_extra(session, entity_id, data)
+
+    await session.commit()
+
+    query = select(model_class)
+    for option in query_options or []:
+        query = query.options(option)
+    entity = (
+        (await session.execute(query.where(model_class.id == entity_id)))
+        .unique()
+        .scalar()
+    )
+    return entity, entity_id
 
 
 def get_selected_fields(info, field_name):
@@ -138,23 +137,24 @@ def get_selected_fields(info, field_name):
     return selected_fields
 
 
-async def find_objs(class_, data: dict, options=None, order_by=None):
-    async with async_session_maker() as session:
-        query = select(class_)
-        for key, value in data.items():
-            if value is not None:
-                query = query.where(getattr(class_, key) == value)
+async def find_objs(
+    class_, data: dict, session: AsyncSession, options=None, order_by=None
+):
+    query = select(class_)
+    for key, value in data.items():
+        if value is not None:
+            query = query.where(getattr(class_, key) == value)
 
-        if options:
-            for option in options:
-                query = query.options(option)
+    if options:
+        for option in options:
+            query = query.options(option)
 
-        if order_by:
-            field = getattr(class_, order_by.field)
-            direction = asc if order_by.direction.upper() == "ASC" else desc
-            query = query.order_by(direction(field))
+    if order_by:
+        field = getattr(class_, order_by.field)
+        direction = asc if order_by.direction.upper() == "ASC" else desc
+        query = query.order_by(direction(field))
 
-        return (await session.execute(query)).unique().scalars().all()
+    return (await session.execute(query)).unique().scalars().all()
 
 
 def get_model(class_name: str):
@@ -169,23 +169,24 @@ def get_model(class_name: str):
     return models.get(class_name)
 
 
-async def get_user_by_token(token: str) -> User:
+async def get_user_by_token(token: str, session: AsyncSession) -> User:
     payload = decode_jwt(token)
-    return await get_user_by_id(payload.get("sub"), role=True)
+    return await get_user_by_id(payload.get("sub"), session, role=True)
 
 
-async def get_user_by_id(user_id: UUID, *, load_role: bool = False) -> User:
-    async with async_session_maker() as session:
-        if load_role:
-            query = (
-                select(User)
-                .where(User.id == user_id)
-                .options(joinedload(User.role))
-            )
-            user = (await session.execute(query)).unique().scalar()
-        else:
-            user = await session.get(User, user_id)
-        return user
+async def get_user_by_id(
+    user_id: UUID, session: AsyncSession, *, load_role: bool = False
+) -> User:
+    if load_role:
+        query = (
+            select(User)
+            .where(User.id == user_id)
+            .options(joinedload(User.role))
+        )
+        user = (await session.execute(query)).unique().scalar()
+    else:
+        user = await session.get(User, user_id)
+    return user
 
 
 async def delete_object(

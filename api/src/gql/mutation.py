@@ -51,13 +51,13 @@ from utils import hash_user_pwd
 class Mutation:
     @strawberry.mutation
     async def change_password(
-        self, new_password: str, change_password_token: str
+        self, info: Info, new_password: str, change_password_token: str
     ) -> bool:
         async with get_redis() as redis:
             user_id = await get_user_id_from_reset_pwd_token(
                 redis, change_password_token
             )
-        user = await get_user_by_id(user_id)
+        user = await get_user_by_id(user_id, info.context["db"])
         await set_new_pwd(user, new_password)
         return True
 
@@ -254,8 +254,10 @@ class Mutation:
         pass
 
     @strawberry.mutation
-    async def decrease_task_time(self, item_id: int, seconds: int) -> bool:
-        await decrease_task_time_by_id(item_id, seconds)
+    async def decrease_task_time(
+        self, info: Info, item_id: int, seconds: int
+    ) -> bool:
+        await decrease_task_time_by_id(item_id, seconds, info.context["db"])
         return True
 
     @strawberry.mutation

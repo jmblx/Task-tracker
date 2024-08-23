@@ -18,13 +18,14 @@ def before_cursor_execute(
     conn.info.setdefault("query_start_time", []).append(time.time())
     logger.info("Start Query: %s", statement)
     logger.info("Parameters: %s", parameters)
+    context._query_start_time = time.time()
 
 
 @event.listens_for(Engine, "after_cursor_execute")
 def after_cursor_execute(
     conn, cursor, statement, parameters, context, executemany
 ):
-    total = time.time() - conn.info["query_start_time"].pop(-1)
+    total = time.time() - context._query_start_time
     logger.info("Query Complete!")
     logger.info("Total Time: %f", total)
 

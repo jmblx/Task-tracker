@@ -27,7 +27,11 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 
 class SQLAlchemySession(Extension):
     async def on_request_start(self):
+        # Получаем сессию и сохраняем её в контексте запроса
         self.execution_context.context["db"] = await anext(get_async_session())
 
     async def on_request_end(self):
-        pass
+        # Закрываем сессию после завершения запроса
+        db_session = self.execution_context.context.get("db")
+        if db_session:
+            await db_session.close()

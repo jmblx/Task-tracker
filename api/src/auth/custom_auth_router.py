@@ -4,10 +4,7 @@ from jwt import DecodeError, ExpiredSignatureError
 from sqlalchemy import update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.status import (
-    HTTP_401_UNAUTHORIZED,
-    HTTP_404_NOT_FOUND,
-)
+from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_404_NOT_FOUND
 
 from auth.models import User
 from db.database import get_async_session

@@ -2,10 +2,7 @@ from collections.abc import Callable
 from datetime import timedelta
 from functools import wraps
 from types import NoneType
-from typing import (
-    Any,
-    get_type_hints,
-)
+from typing import Any, get_type_hints
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -165,6 +162,9 @@ def strawberry_read(
                 await validate_permission(
                     info, model_class.__tablename__, "read"
                 )
+
+            session: AsyncSession = info.context["db"]
+
             operations = extract_selected_fields(info, search_field_name)
             normalized_operations = convert_dict_top_level_to_snake_case(
                 operations
@@ -177,7 +177,11 @@ def strawberry_read(
 
             query_options = create_query_options(model_class, selected_fields)
             instances = await find_objs(
-                model_class, search_data.__dict__, query_options, order_by
+                model_class,
+                search_data.__dict__,
+                session,
+                query_options,
+                order_by,
             )
             if instances:
                 return [
@@ -195,6 +199,7 @@ async def process_data_and_insert(
     info: Info,
     model_class: Base,
     data: Any,
+    session: AsyncSession,
     function_name: str,
     data_process_extra: Callable[[dict, Info], dict] | None = None,
     process_extra_db: Callable[[AsyncSession, dict], Any] | None = None,
@@ -210,7 +215,7 @@ async def process_data_and_insert(
     data = data if isinstance(data, dict) else data.__dict__
     data = data_process_extra(data, info) if data_process_extra else data
     obj, obj_id = await insert_entity(
-        model_class, data, query_options, process_extra_db, exc_fields
+        model_class, data, session, query_options, process_extra_db, exc_fields
     )
 
     return obj, obj_id, selected_fields
@@ -244,10 +249,13 @@ def strawberry_insert(
                 )
             function_name, result_type = get_func_data(func)
 
+            session = info.context["db"]
+
             obj, obj_id, selected_fields = await process_data_and_insert(
                 info,
                 model_class,
                 data,
+                session,
                 function_name,
                 data_process_extra,
                 process_extra_db,
@@ -273,12 +281,13 @@ def strawberry_insert(
     return decorator
 
 
-async def decrease_task_time_by_id(task_id: int, seconds: int) -> bool:
-    async with async_session_maker() as session:
-        task = await session.get(Task, task_id)
-        task.duration -= timedelta(seconds=seconds)
-        await session.commit()
-        return True
+async def decrease_task_time_by_id(
+    task_id: int, seconds: int, session: AsyncSession
+) -> bool:
+    task = await session.get(Task, task_id)
+    task.duration -= timedelta(seconds=seconds)
+    await session.commit()
+    return True
 
 
 def strawberry_update(
@@ -299,9 +308,12 @@ def strawberry_update(
             )
 
             function_name, result_type = get_func_data(func)
+            session = info.context["db"]
 
             if result_type in [NoneType, JSON]:
-                await update_object(data.__dict__, model_class, item_id)
+                await update_object(
+                    data.__dict__, model_class, item_id, session
+                )
                 return {"status": "ok"}
 
             selected_fields = extract_selected_fields(
@@ -312,7 +324,7 @@ def strawberry_update(
 
             query_options = create_query_options(model_class, selected_fields)
             obj = await update_object(
-                data.__dict__, model_class, item_id, query_options
+                data.__dict__, model_class, item_id, session, query_options
             )
             return result_type.from_instance(obj, selected_fields)
 
@@ -345,12 +357,13 @@ def strawberry_delete(
                 not in model_class.__dict__.get("__annotations__", {})
             )
 
+            session = info.context["db"]
+
             delete_function = del_func
             if delete_function is None:
                 delete_function = delete_object if full_delete else soft_delete
 
-            async with async_session_maker() as session:
-                await delete_function(session, item_id, model_class)
+            await delete_function(session, item_id, model_class)
 
             function_name, result_type = get_func_data(func)
             if result_type in [NoneType, JSON]:
@@ -364,7 +377,7 @@ def strawberry_delete(
 
             query_options = create_query_options(model_class, selected_fields)
             instances = await find_objs(
-                model_class, {"id": item_id}, query_options
+                model_class, {"id": item_id}, session, query_options
             )
 
             if not instances:

@@ -1,9 +1,12 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
+from logstash import TCPLogstashHandler
 from nats.aio.client import Client
 
 # from logstash import TCPLogstashHandler
-from starlette.requests import Request
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from strawberry.fastapi import GraphQLRouter
 
@@ -20,6 +23,13 @@ from user_data.router import router as profile_router
 app = FastAPI(title="requests proceed API")
 
 nats_client = Client()
+
+
+logger = logging.getLogger("fastapi")
+logger.setLevel(logging.INFO)
+
+logstash_handler = TCPLogstashHandler("logstash", 50000)
+logger.addHandler(logstash_handler)
 
 
 @app.on_event("startup")
@@ -47,13 +57,19 @@ async def add_auth_token_to_context(request: Request, call_next):
     return await call_next(request)
 
 
-async def get_context(request: Request) -> dict:
+def get_default_context(request: Request) -> dict:
     return {
         "auth_token": request.state.auth_token,
         "refresh_token": request.state.refresh_token,
         "fingerprint": request.state.fingerprint,
         "nats_client": nats_client,
     }
+
+
+async def get_context(request: Request) -> dict:
+    context = get_default_context(request)
+    logger.info("request context: %s", context)
+    return context
 
 
 graphql_app = GraphQLRouter(schema, context_getter=get_context)

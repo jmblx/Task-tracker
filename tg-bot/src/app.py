@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 
+import config
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -10,13 +11,11 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message
 from aiokafka import AIOKafkaConsumer
 from dotenv import find_dotenv, load_dotenv
-
-import config
 from redis_config import RedisSession
 
 load_dotenv(find_dotenv())
-from kbds.reply import get_settings_keyboard
 from handlers.auth import user_private_router as auth_router
+from kbds.reply import get_settings_keyboard
 
 load_dotenv(find_dotenv())
 
@@ -80,7 +79,9 @@ async def consume() -> None:
 
                 if message:
                     await bot.send_message(
-                        chat_id=int(telegram_id), text=message, parse_mode="HTML"
+                        chat_id=int(telegram_id),
+                        text=message,
+                        parse_mode="HTML",
                     )
     finally:
         await consumer.stop()
@@ -103,7 +104,9 @@ async def on_shutdown(bot):
 async def main():
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
-    dp.update.middleware(RedisSession(os.getenv("REDIS_PATH", "redis://localhost")))
+    dp.update.middleware(
+        RedisSession(os.getenv("REDIS_PATH", "redis://localhost"))
+    )
     await bot.delete_webhook(drop_pending_updates=True)
     # await bot.delete_my_commands(scope=types.BotCommandScopeAllPrivateChats())
     polling = asyncio.create_task(

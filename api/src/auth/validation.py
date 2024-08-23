@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 from strawberry import Info
@@ -54,9 +55,9 @@ def validate_token_type(
     )
 
 
-async def get_user_by_token_sub(payload: dict) -> User:
+async def get_user_by_token_sub(payload: dict, session: AsyncSession) -> User:
     user_id: UUID | None = payload.get("sub")
-    if user := await get_user_by_id(user_id):
+    if user := await get_user_by_id(user_id, session):
         return user
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,16 +81,17 @@ class UserGetterFromToken:
 
     def __call__(
         self,
+        session: AsyncSession,
         payload: dict = Depends(get_current_token_payload),
     ):
         validate_token_type(payload, self.token_type)
-        return get_user_by_token_sub(payload)
+        return get_user_by_token_sub(payload, session)
 
 
 # get_current_auth_user = UserGetterFromToken(ACCESS_TOKEN_TYPE)
 get_current_auth_user = get_auth_user_from_token_of_type(ACCESS_TOKEN_TYPE)
 
-get_current_auth_user_for_refresh = UserGetterFromToken(REFRESH_TOKEN_TYPE)
+# get_current_auth_user_for_refresh = UserGetterFromToken(REFRESH_TOKEN_TYPE)
 
 
 def get_current_active_auth_user(
@@ -132,7 +134,7 @@ async def validate_auth_user(
 async def validate_permission(info: Info, entity: str, permission: str):
     try:
         token = info.context.get("auth_token").replace("Bearer ", "")
-        user = await get_user_by_token(token)
+        user = await get_user_by_token(token, session=info.context["db"])
     except (ExpiredSignatureError, DecodeError):
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED)  # noqa: B904
     entity_permissions = user.role.permissions.get(entity)

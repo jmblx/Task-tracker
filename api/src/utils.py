@@ -2,12 +2,7 @@ import inspect
 import re
 from collections.abc import Callable
 from types import NoneType
-from typing import (
-    Any,
-    Protocol,
-    TypeVar,
-    get_type_hints,
-)
+from typing import Any, Protocol, TypeVar, get_type_hints
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.crud import get_user_by_email
 from auth.helpers import create_access_token
@@ -17,7 +18,9 @@ async def auth_user(email: str, password: str | None = None) -> User:
     raise HTTPException(status_code=401)
 
 
-async def refresh_access_token(refresh_token: str, fingerprint: str) -> str:
+async def refresh_access_token(
+    session: AsyncSession, refresh_token: str, fingerprint: str
+) -> str:
     payload = decode_jwt(refresh_token)
     jti = payload.get("jti")
 

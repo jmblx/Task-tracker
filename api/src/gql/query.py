@@ -42,7 +42,8 @@ class Query:
         info: strawberry.types.Info,
         find_data: UserFindType,
     ) -> bool:
-        user = await find_user_by_search_data(find_data.__dict__)
+        session = info.context.get("db")
+        user = await find_user_by_search_data(find_data.__dict__, session)
         token = await send_request_change_password(
             user.email, info.context["nats_client"]
         )
@@ -68,7 +69,7 @@ class Query:
             raise HTTPException(status_code=401)
 
         new_access_token = await refresh_access_token(
-            refresh_token, fingerprint
+            info.context["db"], refresh_token, fingerprint
         )
         return {"accessToken": new_access_token}
 

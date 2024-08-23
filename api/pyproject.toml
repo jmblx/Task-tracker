@@ -53,11 +53,20 @@ pre-commit = "^3.8.0"
 [tool.black]
 line-length = 79
 target-version = ['py311']
+exclude = '''
+/(
+    api/migrations
+    | tg-bot
+)/
+'''
 
 [tool.ruff]
 line-length = 79
 target-version="py311"
 src = ["src"]
+exclude = [
+    "migrations/",
+]
 include = ["src/**.py", "tests/**.py"]
 
 [tool.ruff.lint]
@@ -98,3 +107,8 @@ no-lines-before = ["local-folder"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = ["src"]
+explicit_package_bases = true
