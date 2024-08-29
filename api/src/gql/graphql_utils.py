@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from datetime import timedelta
 from functools import wraps
@@ -15,7 +16,7 @@ from strawberry.scalars import JSON
 from auth.jwt_utils import decode_jwt
 from auth.models import User
 from auth.validation import validate_permission
-from db.database import Base, async_session_maker
+from db.database import Base
 from db.utils import (
     delete_object,
     find_objs,
@@ -23,6 +24,7 @@ from db.utils import (
     soft_delete,
     update_object,
 )
+from deps.cont import container
 from message_routing.nats_utils import process_notifications
 from organization.models import UserOrg
 from task.models import Task, UserTask
@@ -37,7 +39,7 @@ from utils import (
     to_snake_case,
 )
 
-# logger = logging.getLogger("fastapi")
+logger = logging.getLogger("gql_utils")
 # logstash_handler = TCPLogstashHandler("logstash", 50000)
 
 
@@ -163,31 +165,30 @@ def strawberry_read(
                     info, model_class.__tablename__, "read"
                 )
 
-            session: AsyncSession = info.context["db"]
-
+            # async with container() as di:
+            #     session = await di.get(AsyncSession)
             operations = extract_selected_fields(info, search_field_name)
             normalized_operations = convert_dict_top_level_to_snake_case(
                 operations
             )
-
             class_name = type(search_data).__name__
             model_name = extract_model_name(class_name)
-
             selected_fields = normalized_operations.get(f"get{model_name}", {})
-
             query_options = create_query_options(model_class, selected_fields)
+
             instances = await find_objs(
                 model_class,
                 search_data.__dict__,
-                session,
                 query_options,
                 order_by,
             )
+
             if instances:
                 return [
                     result_type.from_instance(instance, selected_fields)
                     for instance in instances
                 ]
+
             return []
 
         return wrapper
@@ -243,13 +244,16 @@ def strawberry_insert(
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(self, info: Info, data: dict) -> Any:
+
             if validation:
                 await validate_permission(
                     info, model_class.__tablename__, "create"
                 )
+
             function_name, result_type = get_func_data(func)
 
-            session = info.context["db"]
+            async with container() as di:
+                session = await di.get(AsyncSession)
 
             obj, obj_id, selected_fields = await process_data_and_insert(
                 info,
@@ -264,7 +268,6 @@ def strawberry_insert(
 
             if notify_subject:
                 await process_notifications(
-                    info,
                     data,
                     notify_from_data_kwargs,
                     notify_kwargs,
@@ -281,12 +284,12 @@ def strawberry_insert(
     return decorator
 
 
-async def decrease_task_time_by_id(
-    task_id: int, seconds: int, session: AsyncSession
-) -> bool:
-    task = await session.get(Task, task_id)
-    task.duration -= timedelta(seconds=seconds)
-    await session.commit()
+async def decrease_task_time_by_id(task_id: int, seconds: int) -> bool:
+    async with container() as di:
+        session = await di.get(AsyncSession)
+        task = await session.get(Task, task_id)
+        task.duration -= timedelta(seconds=seconds)
+        await session.commit()
     return True
 
 
@@ -295,7 +298,7 @@ def strawberry_update(
 ) -> Callable[[Callable], Callable]:
     """
     decorator to update object based on model,
-     type_hints (return type and args types)
+    type_hints (return type and args types)
     """
 
     def decorator(func: Callable) -> Callable:
@@ -308,25 +311,28 @@ def strawberry_update(
             )
 
             function_name, result_type = get_func_data(func)
-            session = info.context["db"]
+            async with container() as di:
+                session = await di.get(AsyncSession)
 
-            if result_type in [NoneType, JSON]:
-                await update_object(
-                    data.__dict__, model_class, item_id, session
+                if result_type in [NoneType, JSON]:
+                    await update_object(
+                        data.__dict__, model_class, item_id, session
+                    )
+                    return {"status": "ok"}
+
+                selected_fields = extract_selected_fields(
+                    info, snake_to_camel(function_name)
                 )
-                return {"status": "ok"}
+                normalized_operations: dict = to_snake_case(selected_fields)
+                selected_fields = normalized_operations.get(function_name, {})
 
-            selected_fields = extract_selected_fields(
-                info, snake_to_camel(function_name)
-            )
-            normalized_operations: dict = to_snake_case(selected_fields)
-            selected_fields = normalized_operations.get(function_name, {})
-
-            query_options = create_query_options(model_class, selected_fields)
-            obj = await update_object(
-                data.__dict__, model_class, item_id, session, query_options
-            )
-            return result_type.from_instance(obj, selected_fields)
+                query_options = create_query_options(
+                    model_class, selected_fields
+                )
+                obj = await update_object(
+                    data.__dict__, model_class, item_id, session, query_options
+                )
+                return result_type.from_instance(obj, selected_fields)
 
         return wrapper
 
@@ -357,28 +363,33 @@ def strawberry_delete(
                 not in model_class.__dict__.get("__annotations__", {})
             )
 
-            session = info.context["db"]
+            async with container() as di:
+                session = await di.get(AsyncSession)
 
-            delete_function = del_func
-            if delete_function is None:
-                delete_function = delete_object if full_delete else soft_delete
+                delete_function = del_func
+                if delete_function is None:
+                    delete_function = (
+                        delete_object if full_delete else soft_delete
+                    )
 
-            await delete_function(session, item_id, model_class)
+                await delete_function(session, item_id, model_class)
 
-            function_name, result_type = get_func_data(func)
-            if result_type in [NoneType, JSON]:
-                return {"status": "successfully deleted"}
+                function_name, result_type = get_func_data(func)
+                if result_type in [NoneType, JSON]:
+                    return {"status": "successfully deleted"}
 
-            selected_fields = extract_selected_fields(
-                info, snake_to_camel(function_name)
-            )
-            normalized_operations = to_snake_case(selected_fields)
-            selected_fields = normalized_operations.get(function_name, {})
+                selected_fields = extract_selected_fields(
+                    info, snake_to_camel(function_name)
+                )
+                normalized_operations = to_snake_case(selected_fields)
+                selected_fields = normalized_operations.get(function_name, {})
 
-            query_options = create_query_options(model_class, selected_fields)
-            instances = await find_objs(
-                model_class, {"id": item_id}, session, query_options
-            )
+                query_options = create_query_options(
+                    model_class, selected_fields
+                )
+                instances = await find_objs(
+                    model_class, {"id": item_id}, session, query_options
+                )
 
             if not instances:
                 raise HTTPException(status_code=404)

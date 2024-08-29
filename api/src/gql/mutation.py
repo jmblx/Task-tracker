@@ -2,12 +2,14 @@ import secrets
 from uuid import UUID
 
 import strawberry
+from redis.asyncio import Redis
 from strawberry import Info
 from strawberry.scalars import JSON
 
 from auth.models import Role, User
 from auth.reset_pwd_utils import set_new_pwd
 from db.utils import full_delete_group, full_delete_user, get_user_by_id
+from deps.cont import container
 from google_auth.andoroid_auth import google_register
 from gql.gql_types import (
     GoogleRegDTO,
@@ -39,7 +41,6 @@ from gql.graphql_utils import (
     strawberry_update,
     task_preprocess,
 )
-from myredis.redis_config import get_redis
 from myredis.utils import get_user_id_from_reset_pwd_token
 from organization.models import Organization
 from project.models import Project
@@ -51,13 +52,14 @@ from utils import hash_user_pwd
 class Mutation:
     @strawberry.mutation
     async def change_password(
-        self, info: Info, new_password: str, change_password_token: str
+        self, new_password: str, change_password_token: str
     ) -> bool:
-        async with get_redis() as redis:
+        async with container() as ioc:
+            redis = await ioc.get(Redis)
             user_id = await get_user_id_from_reset_pwd_token(
                 redis, change_password_token
             )
-        user = await get_user_by_id(user_id, info.context["db"])
+        user = await get_user_by_id(user_id)
         await set_new_pwd(user, new_password)
         return True
 
@@ -257,7 +259,7 @@ class Mutation:
     async def decrease_task_time(
         self, info: Info, item_id: int, seconds: int
     ) -> bool:
-        await decrease_task_time_by_id(item_id, seconds, info.context["db"])
+        await decrease_task_time_by_id(item_id, seconds)
         return True
 
     @strawberry.mutation

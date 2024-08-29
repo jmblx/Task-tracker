@@ -3,47 +3,30 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
-from logstash import TCPLogstashHandler
-from nats.aio.client import Client
 
 # from logstash import TCPLogstashHandler
-from starlette_exporter import PrometheusMiddleware, handle_metrics
+# from logstash import TCPLogstashHandler
+# from starlette_exporter import PrometheusMiddleware, handle_metrics
 from strawberry.fastapi import GraphQLRouter
 
 import db.logs  # noqa: F401
 from auth.custom_auth_router import router as auth_router
-from config import NATS_URL
 from gql.graphql_schema import schema
 from middleware_utils import form_state
 
 # from auth.jwt_auth import router as jwt_router
 from speech_task.router import router as speech_task_router
-from user_data.router import router as profile_router
 
 app = FastAPI(title="requests proceed API")
-
-nats_client = Client()
 
 
 logger = logging.getLogger("fastapi")
 logger.setLevel(logging.INFO)
 
-logstash_handler = TCPLogstashHandler("logstash", 50000)
-logger.addHandler(logstash_handler)
-
-
-@app.on_event("startup")
-async def startup_event():
-    await nats_client.connect(servers=[NATS_URL])
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await nats_client.close()
-
+# logstash_handler = TCPLogstashHandler("logstash", 50000)
+# logger.addHandler(logstash_handler)
 
 app.include_router(auth_router)
-app.include_router(profile_router)
 app.include_router(speech_task_router)
 
 
@@ -62,7 +45,7 @@ def get_default_context(request: Request) -> dict:
         "auth_token": request.state.auth_token,
         "refresh_token": request.state.refresh_token,
         "fingerprint": request.state.fingerprint,
-        "nats_client": nats_client,
+        # "nats_client": nats_client,
     }
 
 
@@ -76,8 +59,8 @@ graphql_app = GraphQLRouter(schema, context_getter=get_context)
 
 app.include_router(graphql_app, prefix="/graphql")
 
-app.add_middleware(PrometheusMiddleware)
-app.add_route("/metrics", handle_metrics)
+# app.add_middleware(PrometheusMiddleware)
+# app.add_route("/metrics", handle_metrics)
 
 origins = ["*"]
 app.add_middleware(

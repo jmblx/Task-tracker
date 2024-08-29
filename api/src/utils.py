@@ -17,7 +17,7 @@ from sqlalchemy.orm import (
 
 from auth.jwt_utils import hash_password
 from auth.models import User
-from db.database import Base, async_session_maker
+from db.database import Base
 from task.models import Group, Task
 
 GqlType = TypeVar("GqlType", bound="GqlProtocol")
@@ -43,31 +43,6 @@ def create_task_data(user: User, task: Task, group: Group):
         "task_end_time": task.done_at,
         "task_group_name": group.name,
     }
-
-
-async def prepare_data_mailing(
-    user: User, task: Task, group: Group, redis
-) -> dict:
-    if await redis.smembers(f"auth:{user.tg_id}"):
-        return {
-            str(user.tg_id): create_task_data(
-                user,
-                task,
-                group,
-            )
-        }
-    return {}
-
-
-async def insert_default(model_class: Base, data: dict):
-    """
-    Простой insert запрос в БД
-    """
-    async with async_session_maker() as session:
-        model = model_class(**data)
-        await session.add(model)
-        await session.commit()
-    return True
 
 
 async def hash_user_pwd(session: AsyncSession, user_id: UUID, data: dict):

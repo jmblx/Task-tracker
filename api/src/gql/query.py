@@ -1,5 +1,7 @@
 import strawberry
 from fastapi.exceptions import HTTPException
+from nats.aio.client import Client
+from redis.asyncio import Redis
 from strawberry import Info
 from strawberry.scalars import JSON
 
@@ -8,6 +10,7 @@ from auth.crud import find_user_by_search_data
 from auth.helpers import authenticate
 from auth.models import Role, User
 from auth.reset_pwd_utils import send_request_change_password
+from deps.cont import container
 from gql.gql_types import (
     GroupFindType,
     GroupType,
@@ -25,7 +28,6 @@ from gql.gql_types import (
     UserType,
 )
 from gql.graphql_utils import strawberry_read
-from myredis.redis_config import get_redis
 from myredis.utils import token_to_redis
 from organization.models import Organization
 from project.models import Project
@@ -39,16 +41,17 @@ class Query:
     @strawberry.field
     async def request_change_password(
         self,
-        info: strawberry.types.Info,
         find_data: UserFindType,
     ) -> bool:
-        session = info.context.get("db")
-        user = await find_user_by_search_data(find_data.__dict__, session)
-        token = await send_request_change_password(
-            user.email, info.context["nats_client"]
-        )
-        async with get_redis() as redis:
+        user = await find_user_by_search_data(find_data.__dict__)
+        async with container() as ioc:
+            nats_client = ioc.get(Client)
+            redis = await ioc.get(Redis)
+
+            token = await send_request_change_password(nats_client, user.email)
+
             await token_to_redis(redis, user.id, token)
+
         return True
 
     @strawberry.field
@@ -56,7 +59,12 @@ class Query:
         self, info: strawberry.types.Info, auth_data: UserAuthType
     ) -> JSON:
         user = await auth_user(auth_data.email, auth_data.password)
-        info.context["response"], access_token = await authenticate(info, user)
+
+        async with container() as ioc:
+            redis = await ioc.get(Redis)
+            info.context["response"], access_token = await authenticate(
+                redis, info, user
+            )
 
         return access_token
 
@@ -69,7 +77,7 @@ class Query:
             raise HTTPException(status_code=401)
 
         new_access_token = await refresh_access_token(
-            info.context["db"], refresh_token, fingerprint
+            refresh_token, fingerprint
         )
         return {"accessToken": new_access_token}
 

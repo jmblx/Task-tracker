@@ -1,3 +1,9 @@
 certs/
 .env
+.venv
+env/
+venv/
+ENV/
 .idea
+.ruff_cache
+.mypy_cache

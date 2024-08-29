@@ -45,6 +45,7 @@ class Task(Base):
     color: Mapped[str]
     duration = mapped_column(Interval)
     difficulty: Mapped[Difficulty] = mapped_column(nullable=True)
+    #  pathfile: Mapped[str] = mapped_column(nullable=True)
     project_id: Mapped[int] = mapped_column(
         ForeignKey("project.id", ondelete="CASCADE"), nullable=True
     )

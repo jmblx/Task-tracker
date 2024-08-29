@@ -12,7 +12,6 @@ from auth import jwt_utils
 from auth.crud import get_user_by_email
 from auth.helpers import (
     ACCESS_TOKEN_TYPE,
-    REFRESH_TOKEN_TYPE,
     TOKEN_TYPE_FIELD,
 )
 from auth.models import User
@@ -134,7 +133,7 @@ async def validate_auth_user(
 async def validate_permission(info: Info, entity: str, permission: str):
     try:
         token = info.context.get("auth_token").replace("Bearer ", "")
-        user = await get_user_by_token(token, session=info.context["db"])
+        user = await get_user_by_token(token)
     except (ExpiredSignatureError, DecodeError):
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED)  # noqa: B904
     entity_permissions = user.role.permissions.get(entity)

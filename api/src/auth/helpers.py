@@ -10,7 +10,6 @@ from strawberry.scalars import JSON
 from auth import jwt_utils as auth_utils
 from auth.models import User
 from config import settings
-from myredis.redis_config import get_redis
 from myredis.utils import save_refresh_token_to_redis
 
 TOKEN_TYPE_FIELD = "type"  # noqa: S105
@@ -94,13 +93,12 @@ async def create_refresh_token(user: Any, fingerprint: str) -> dict:
     return refresh_token_data
 
 
-async def authenticate(info: Info, user: User) -> tuple[Response, JSON]:
+async def authenticate(redis, info: Info, user: User) -> tuple[Response, JSON]:
     access_token = create_access_token(user)
     fingerprint = info.context.get("fingerprint")
 
-    async with get_redis() as redis:
-        refresh_token_data = await create_refresh_token(user, fingerprint)
-        await save_refresh_token_to_redis(redis, refresh_token_data)
+    refresh_token_data = await create_refresh_token(user, fingerprint)
+    await save_refresh_token_to_redis(redis, refresh_token_data)
 
     response = info.context["response"]
     response.set_cookie(

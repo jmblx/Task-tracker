@@ -2,10 +2,11 @@ import secrets
 from typing import TYPE_CHECKING
 
 from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.jwt_utils import hash_password
 from auth.models import User
-from db.database import async_session_maker
+from deps.cont import container
 from message_routing.nats_utils import send_via_nats
 
 if TYPE_CHECKING:
@@ -13,7 +14,8 @@ if TYPE_CHECKING:
 
 
 async def set_new_pwd(user: User, new_pwd):
-    async with async_session_maker() as session:
+    async with container() as di:
+        session = await di.get(AsyncSession)
         hashed_pwd = hash_password(new_pwd)
         stmt = (
             update(User)

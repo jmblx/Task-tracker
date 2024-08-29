@@ -1,8 +1,10 @@
 from collections.abc import Callable
 
+from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry import Info
 
 from auth.models import User
+from deps.cont import container
 from gql.gql_types import GoogleRegDTO, UserType
 from gql.graphql_utils import process_data_and_insert
 from utils import get_func_data
@@ -21,7 +23,8 @@ def google_register(func: Callable) -> Callable:
             else None
         )
 
-        session = info.context["db"]
+        async with container() as di:
+            session = await di.get(AsyncSession)
 
         obj, _, selected_fields = await process_data_and_insert(
             info, User, data_dict, session, function_name=function_name

@@ -33,7 +33,7 @@ async def save_refresh_token_to_redis(
             fingerprint,
         )
 
-    await redis.hset(f"refresh_token:{jti}", mapping=refresh_token_data)  # type: ignore
+    await redis.hset(f"refresh_token:{jti}", mapping=refresh_token_data)
     await redis.set(f"refresh_token_index:{user_id}:{fingerprint}", jti)
     logging.info("Saved new token with jti: %s", jti)
 

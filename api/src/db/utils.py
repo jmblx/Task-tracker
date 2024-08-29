@@ -9,7 +9,8 @@ from sqlalchemy.orm import joinedload
 
 from auth.jwt_utils import decode_jwt
 from auth.models import Role, User
-from db.database import Base, async_session_maker
+from db.database import Base
+from deps.cont import container
 from organization.models import Organization, UserOrg
 from project.models import Project
 from task.models import Group, Task, UserTask
@@ -61,8 +62,11 @@ async def update_object(
     return None
 
 
-async def default_update(model: Base, obj_id: int | UUID, data: dict):
-    async with async_session_maker() as session:
+async def default_update(
+    model: Base, session: AsyncSession, obj_id: int | UUID, data: dict
+):
+    async with container() as di:
+        session = await di.get(AsyncSession)
         update_data = {
             key: value for key, value in data.items() if value is not None
         }
@@ -137,24 +141,24 @@ def get_selected_fields(info, field_name):
     return selected_fields
 
 
-async def find_objs(
-    class_, data: dict, session: AsyncSession, options=None, order_by=None
-):
-    query = select(class_)
-    for key, value in data.items():
-        if value is not None:
-            query = query.where(getattr(class_, key) == value)
+async def find_objs(class_, data: dict, options=None, order_by=None):
+    async with container() as di:
+        session = await di.get(AsyncSession)
+        query = select(class_)
+        for key, value in data.items():
+            if value is not None:
+                query = query.where(getattr(class_, key) == value)
 
-    if options:
-        for option in options:
-            query = query.options(option)
+        if options:
+            for option in options:
+                query = query.options(option)
 
-    if order_by:
-        field = getattr(class_, order_by.field)
-        direction = asc if order_by.direction.upper() == "ASC" else desc
-        query = query.order_by(direction(field))
+        if order_by:
+            field = getattr(class_, order_by.field)
+            direction = asc if order_by.direction.upper() == "ASC" else desc
+            query = query.order_by(direction(field))
 
-    return (await session.execute(query)).unique().scalars().all()
+        return (await session.execute(query)).unique().scalars().all()
 
 
 def get_model(class_name: str):
@@ -169,23 +173,23 @@ def get_model(class_name: str):
     return models.get(class_name)
 
 
-async def get_user_by_token(token: str, session: AsyncSession) -> User:
+async def get_user_by_token(token: str) -> User:
     payload = decode_jwt(token)
-    return await get_user_by_id(payload.get("sub"), session, role=True)
+    return await get_user_by_id(payload.get("sub"), load_role=True)
 
 
-async def get_user_by_id(
-    user_id: UUID, session: AsyncSession, *, load_role: bool = False
-) -> User:
-    if load_role:
-        query = (
-            select(User)
-            .where(User.id == user_id)
-            .options(joinedload(User.role))
-        )
-        user = (await session.execute(query)).unique().scalar()
-    else:
-        user = await session.get(User, user_id)
+async def get_user_by_id(user_id: UUID, *, load_role: bool = False) -> User:
+    async with container() as di:
+        session = await di.get(AsyncSession)
+        if load_role:
+            query = (
+                select(User)
+                .where(User.id == user_id)
+                .options(joinedload(User.role))
+            )
+            user = (await session.execute(query)).unique().scalar()
+        else:
+            user = await session.get(User, user_id)
     return user
 
 

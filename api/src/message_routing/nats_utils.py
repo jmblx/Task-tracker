@@ -1,11 +1,15 @@
 import json
+import logging
 from typing import Any
 
 from nats.aio.client import Client
-from strawberry import Info
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.database import Base
 from db.utils import default_update
+from deps.cont import container
+
+logger = logging.getLogger(__name__)
 
 
 async def send_via_nats(
@@ -24,7 +28,6 @@ async def send_via_nats(
 
 
 async def process_notifications(
-    info: Info,
     data: dict,
     notify_from_data_kwargs: dict[str, str] | None,
     notify_kwargs: dict[str, str] | None,
@@ -43,12 +46,17 @@ async def process_notifications(
             }
         )
 
-        nats_client = info.context["nats_client"]
+    async with container() as di:
+        nats_client = await di.get(Client)
+
         await send_via_nats(
             nats_client=nats_client,
             subject=notify_subject,
             data=notify_kwargs,
         )
 
+    async with container() as di:
+        session = await di.get(AsyncSession)
+
         if need_update:
-            await default_update(model_class, obj_id, notify_kwargs)
+            await default_update(model_class, session, obj_id, notify_kwargs)
