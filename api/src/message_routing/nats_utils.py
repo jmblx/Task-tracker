@@ -46,8 +46,8 @@ async def process_notifications(
             }
         )
 
-    async with container() as di:
-        nats_client = await di.get(Client)
+    async with container() as ioc:
+        nats_client = await ioc.get(Client)
 
         await send_via_nats(
             nats_client=nats_client,
@@ -55,8 +55,5 @@ async def process_notifications(
             data=notify_kwargs,
         )
 
-    async with container() as di:
-        session = await di.get(AsyncSession)
-
-        if need_update:
-            await default_update(model_class, session, obj_id, notify_kwargs)
+    if need_update:
+        await default_update(model_class, obj_id, notify_kwargs)

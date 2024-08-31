@@ -14,8 +14,9 @@ from strawberry import Info
 from strawberry.scalars import JSON
 
 from auth.jwt_utils import decode_jwt
-from auth.models import User
+from entities.user.models import User
 from auth.validation import validate_permission
+from config import AuthJWT
 from db.database import Base
 from db.utils import (
     delete_object,
@@ -26,8 +27,8 @@ from db.utils import (
 )
 from deps.cont import container
 from message_routing.nats_utils import process_notifications
-from organization.models import UserOrg
-from task.models import Task, UserTask
+from entities.organization.models import UserOrg
+from entities.task.models import Task, UserTask
 from utils import (
     GqlType,
     convert_dict_top_level_to_snake_case,
@@ -93,9 +94,11 @@ async def process_project_staff(
 
 
 def task_preprocess(data: dict, info: Info) -> dict:
+    auth_settings = AuthJWT()
     if "assigner_id" not in data:
         data["assigner_id"] = decode_jwt(
-            info.context.user.id.access_token
+            info.context.user.id.access_token,
+            auth_settings
         ).get("sub")
     return data
 
@@ -255,16 +258,16 @@ def strawberry_insert(
             async with container() as di:
                 session = await di.get(AsyncSession)
 
-            obj, obj_id, selected_fields = await process_data_and_insert(
-                info,
-                model_class,
-                data,
-                session,
-                function_name,
-                data_process_extra,
-                process_extra_db,
-                exc_fields,
-            )
+                obj, obj_id, selected_fields = await process_data_and_insert(
+                    info,
+                    model_class,
+                    data,
+                    session,
+                    function_name,
+                    data_process_extra,
+                    process_extra_db,
+                    exc_fields,
+                )
 
             if notify_subject:
                 await process_notifications(

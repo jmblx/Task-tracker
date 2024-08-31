@@ -1,9 +1,11 @@
 import logging
 from collections.abc import AsyncIterable
+import os
 
 import redis.asyncio as aioredis
 from dishka import Provider, Scope, make_async_container, provide
 from nats.aio.client import Client
+from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -11,7 +13,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from config import DatabaseConfig, NatsConfig, RedisConfig
+from config import DatabaseConfig, NatsConfig, RedisConfig, AuthJWT
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,8 @@ class DBProvider(Provider):
 
     @provide(scope=Scope.APP)
     def provide_engine(self, config: DatabaseConfig) -> AsyncEngine:
-        return create_async_engine(config.db_uri)
+        pool_class = NullPool if os.getenv("USE_NULLPOOL", "false").lower() == "true" else None
+        return create_async_engine(config.db_uri, poolclass=pool_class)
 
     @provide(scope=Scope.APP)
     def provide_sessionmaker(
@@ -80,4 +83,10 @@ class RedisProvider(Provider):
             await redis.close()
 
 
-container = make_async_container(NatsProvider(), DBProvider(), RedisProvider())
+class AuthProvider(Provider):
+    @provide(scope=Scope.APP, provides=AuthJWT)
+    def provide_auth_settings(self) -> AuthJWT:
+        return AuthJWT()
+
+
+container = make_async_container(NatsProvider(), DBProvider(), RedisProvider(), AuthProvider())

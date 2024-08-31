@@ -16,9 +16,9 @@ from sqlalchemy.orm import (
 )
 
 from auth.jwt_utils import hash_password
-from auth.models import User
+from entities.user.models import User
 from db.database import Base
-from task.models import Group, Task
+from entities.task.models import Group, Task
 
 GqlType = TypeVar("GqlType", bound="GqlProtocol")
 
@@ -176,3 +176,29 @@ def create_query_options(model: Any, fields: dict[str, Any]) -> list:
             options.append(load_only(getattr(model, field)))
 
     return options
+
+
+def validate_password(password: str) -> bool:
+    """Проверяет, что пароль состоит минимум из 8-и символов,
+    содержит хотя бы одну цифру и не содержит пробелов."""
+    return bool(re.match(r"^(?=.*\d)\S{8,}$", password))
+
+
+def test_validate_password():
+    # Тесты для корректных паролей
+    assert validate_password("abc12345") == True, "Пароль с 8 символами, включая цифры, должен быть допустим"
+    assert validate_password("password1") == True, "Пароль с буквами и цифрой должен быть допустим"
+    assert validate_password("12345678") == True, "Пароль с 8 цифрами должен быть допустим"
+    assert validate_password("Passw0rd") == True, "Пароль с заглавными и строчными буквами и цифрой должен быть допустим"
+
+    # Тесты для некорректных паролей
+    assert validate_password("1234567") == False, "Пароль меньше 8 символов должен быть недопустим"
+    assert validate_password("password") == False, "Пароль без цифр должен быть недопустим"
+    assert validate_password("pass word1") == False, "Пароль с пробелами должен быть недопустим"
+    assert validate_password(" ") == False, "Пустая строка должна быть недопустима"
+    assert validate_password("passw0r") == False, "Пароль длиной менее 8 символов должен быть недопустим"
+    assert validate_password("P@ssw0rd") == True, "Пароль с символами, цифрой и без пробелов должен быть допустим"
+
+if __name__ == "__main__":
+    test_validate_password()
+    print("Все тесты пройдены!")

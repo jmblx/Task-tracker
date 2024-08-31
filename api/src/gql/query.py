@@ -8,8 +8,9 @@ from strawberry.scalars import JSON
 from auth.auth_helpers import auth_user, refresh_access_token
 from auth.crud import find_user_by_search_data
 from auth.helpers import authenticate
-from auth.models import Role, User
+from entities.user.models import Role, User
 from auth.reset_pwd_utils import send_request_change_password
+from config import AuthJWT
 from deps.cont import container
 from gql.gql_types import (
     GroupFindType,
@@ -29,9 +30,9 @@ from gql.gql_types import (
 )
 from gql.graphql_utils import strawberry_read
 from myredis.utils import token_to_redis
-from organization.models import Organization
-from project.models import Project
-from task.models import Group, Task
+from entities.organization.models import Organization
+from entities.project.models import Project
+from entities.task.models import Group, Task
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -62,8 +63,9 @@ class Query:
 
         async with container() as ioc:
             redis = await ioc.get(Redis)
+            auth_settings = await ioc.get(AuthJWT)
             info.context["response"], access_token = await authenticate(
-                redis, info, user
+                redis, info, user, auth_settings
             )
 
         return access_token

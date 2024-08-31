@@ -6,8 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.database import Base
 from db_types import added_at, intpk
-from organization.models import Organization
-from task.models import Group
+from entities.organization.models import Organization
+from entities.task.models import Group
 
 
 class User(Base):

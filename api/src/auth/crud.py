@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
-from auth.models import User
+from entities.user.models import User
 from db.utils import find_objs
 from deps.cont import container
 

@@ -1,62 +1,91 @@
 from datetime import datetime, timedelta
+from typing import Optional, TYPE_CHECKING
 
 import bcrypt
 import jwt
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError, InvalidHash
 from pytz import timezone
 
-from config import settings
+from config import AuthJWT
+from deps.cont import container
+
 
 
 def encode_jwt(
     payload: dict,
-    private_key: str = settings.auth_jwt.private_key_path.read_text(),
-    algorithm: str = settings.auth_jwt.algorithm,
-    expire_minutes: int = settings.auth_jwt.access_token_expire_minutes,
-    expire_timedelta: timedelta | None = None,
+    auth_settings: Optional["AuthJWT"] = None,
+    expire_minutes: Optional[int] = None,
+    expire_timedelta: Optional[timedelta] = None,
 ) -> str:
+    expire_minutes = expire_minutes if expire_minutes else auth_settings.access_token_expire_minutes
     to_encode = payload.copy()
     tz = timezone("Europe/Moscow")
     now = datetime.now(tz)
+
     if expire_timedelta:
         expire = now + expire_timedelta
     else:
-        expire = now + timedelta(minutes=expire_minutes)
+        expire = now + timedelta(minutes=expire_minutes or expire_minutes)
+
     to_encode.update(
         exp=expire,
         iat=now,
     )
+
     return jwt.encode(
         to_encode,
-        private_key,
-        algorithm=algorithm,
+        auth_settings.private_key,
+        algorithm=auth_settings.algorithm
     )
 
 
 def decode_jwt(
     token: str | bytes,
-    public_key: str = settings.auth_jwt.public_key_path.read_text(),
-    algorithm: str = settings.auth_jwt.algorithm,
+    auth_settings: AuthJWT
 ) -> dict:
     return jwt.decode(
         token,
-        public_key,
-        algorithms=[algorithm],
+        auth_settings.public_key,
+        algorithms=[auth_settings.algorithm],
     )
 
 
-def hash_password(
-    password: str,
-) -> bytes:
-    salt = bcrypt.gensalt()
-    pwd_bytes: bytes = password.encode()
-    return bcrypt.hashpw(pwd_bytes, salt)
+# def hash_password(
+#     password: str,
+# ) -> bytes:
+#     salt = bcrypt.gensalt()
+#     pwd_bytes: bytes = password.encode()
+#     return bcrypt.hashpw(pwd_bytes, salt)
+#
+#
+# def validate_password(
+#     password: str,
+#     hashed_password: bytes,
+# ) -> bool:
+#     return bcrypt.checkpw(
+#         password=password.encode(),
+#         hashed_password=hashed_password,
+#     )
 
 
-def validate_password(
-    password: str,
-    hashed_password: bytes,
-) -> bool:
-    return bcrypt.checkpw(
-        password=password.encode(),
-        hashed_password=hashed_password,
-    )
+ph = PasswordHasher()
+
+
+def hash_password(password: str) -> bytes:
+    hashed_password_str = ph.hash(password)
+    return hashed_password_str.encode('utf-8')
+
+
+def validate_password(password: str, hashed_password: bytes) -> bool:
+    try:
+        hashed_password_str = hashed_password.decode('utf-8')
+        ph.verify(hashed_password_str, password)
+        return True
+    except VerifyMismatchError:
+        return False
+    except InvalidHash:
+        return bcrypt.checkpw(
+            password=password.encode(),
+            hashed_password=hashed_password,
+        )

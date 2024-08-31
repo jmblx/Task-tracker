@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from db.database import Base
 from db_types import added_at, intpk
-from organization.models import Organization
+from entities.organization.models import Organization
 
 
 class Project(Base):

@@ -3,7 +3,7 @@ from collections.abc import Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 from strawberry import Info
 
-from auth.models import User
+from entities.user.models import User
 from deps.cont import container
 from gql.gql_types import GoogleRegDTO, UserType
 from gql.graphql_utils import process_data_and_insert

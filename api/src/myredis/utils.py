@@ -1,16 +1,18 @@
 import logging
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from redis import asyncio as aioredis
 
-from config import settings
+if TYPE_CHECKING:
+    from config import AuthJWT
 
 # logging.basicConfig(level=logging.INFO)
 
 
 async def save_refresh_token_to_redis(
-    redis: aioredis.Redis, refresh_token_data: dict
+    redis: aioredis.Redis, refresh_token_data: dict, auth_settings: "AuthJWT"
 ) -> None:
     jti = str(refresh_token_data.pop("jti"))
     user_id = refresh_token_data["user_id"]
@@ -40,7 +42,7 @@ async def save_refresh_token_to_redis(
     await redis.zadd(f"refresh_tokens:{user_id}", {jti: created_at})
 
     num_tokens = await redis.zcard(f"refresh_tokens:{user_id}")
-    if num_tokens > settings.auth_jwt.refresh_token_by_user_limit:
+    if num_tokens > auth_settings.refresh_token_by_user_limit:
         oldest_jti_list = await redis.zrange(f"refresh_tokens:{user_id}", 0, 0)
         if oldest_jti_list:
             oldest_jti = oldest_jti_list[0]

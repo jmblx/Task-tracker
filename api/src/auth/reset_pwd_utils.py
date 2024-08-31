@@ -5,7 +5,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.jwt_utils import hash_password
-from auth.models import User
+from entities.user.models import User
 from deps.cont import container
 from message_routing.nats_utils import send_via_nats
 
