@@ -68,7 +68,7 @@ exclude = '''
 '''
 
 [tool.ruff]
-line-length = 79
+line-length = 89
 target-version="py311"
 src = ["src"]
 exclude = [

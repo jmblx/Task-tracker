@@ -3,7 +3,7 @@ from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from redis.asyncio.client import Redis
-from utils import link, login
+from core.utils import link, login
 
 user_private_router = Router()
 

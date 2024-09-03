@@ -1,18 +1,26 @@
-import sys
-from typing import AsyncGenerator, Any
 import os
+import sys
+from collections.abc import AsyncGenerator
+from typing import Any
 
+import pytest
 from alembic import command
 from alembic.config import Config
-import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src"))
+)
 
-from config import TEST_DATABASE_URI  # noqa: E402
-from main import app  # noqa: E402
+from config import TEST_DATABASE_URI
+from main import app
 
 os.environ["USE_NULLPOOL"] = "true"
 
@@ -31,12 +39,16 @@ def async_engine() -> AsyncEngine:
 
 
 @pytest.fixture(scope="session")
-async def session_maker(async_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+async def session_maker(
+    async_engine: AsyncEngine,
+) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(bind=async_engine)
 
 
-@pytest.fixture(scope='function')
-async def async_session(session_maker: async_sessionmaker[AsyncSession]) -> AsyncGenerator[Any, Any]:
+@pytest.fixture(scope="function")
+async def async_session(
+    session_maker: async_sessionmaker[AsyncSession],
+) -> AsyncGenerator[Any, Any]:
     async with session_maker() as session:
         yield session
 

@@ -8,8 +8,14 @@ from sqlalchemy import engine_from_config, pool, create_engine
 # Добавляем путь к src в sys.path
 sys.path.append(os.path.join(sys.path[0], "src"))
 
-from config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER  # Импорт конфигурации
-from entities.project.models import *
+from config import (
+    DB_HOST,
+    DB_NAME,
+    DB_PASS,
+    DB_PORT,
+    DB_USER,
+)  # Импорт конфигурации
+from domain.entities.project.models import *
 
 # Настройка конфигурации Alembic
 config = context.config
@@ -25,6 +31,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
 
 # Получаем URL базы данных
 def get_url():
@@ -50,7 +57,9 @@ def run_migrations_online() -> None:
     url = get_url()
 
     if "asyncpg" in url:  # Если URL асинхронный, заменяем его на синхронный
-        sync_url = url.replace("asyncpg", "psycopg2")  # Заменяем на синхронный драйвер
+        sync_url = url.replace(
+            "asyncpg", "psycopg2"
+        )  # Заменяем на синхронный драйвер
         connectable = create_engine(sync_url, poolclass=pool.NullPool)
     else:
         connectable = engine_from_config(
@@ -60,7 +69,9 @@ def run_migrations_online() -> None:
         )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
 
         with context.begin_transaction():
             context.run_migrations()

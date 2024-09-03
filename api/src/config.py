@@ -4,7 +4,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
-from pydantic_settings import BaseSettings
 
 # Загружаем скрытые данные из файла .env
 
@@ -112,8 +111,12 @@ API_ADMIN_PWD = os.environ.get("API_ADMIN_PWD")
 
 
 class AuthJWT(BaseModel):
-    private_key_path: Path = Path(__file__).parent.parent / "certs" / "jwt-private.pem"
-    public_key_path: Path = Path(__file__).parent.parent / "certs" / "jwt-public.pem"
+    private_key_path: Path = (
+        Path(__file__).parent.parent / "certs" / "jwt-private.pem"
+    )
+    public_key_path: Path = (
+        Path(__file__).parent.parent / "certs" / "jwt-public.pem"
+    )
     algorithm: str = "RS512"
     access_token_expire_minutes: int = 1500
     refresh_token_expire_days: int = 30

@@ -9,13 +9,13 @@ from fastapi.requests import Request
 # from starlette_exporter import PrometheusMiddleware, handle_metrics
 from strawberry.fastapi import GraphQLRouter
 
-import db.logs  # noqa: F401
-from auth.custom_auth_router import router as auth_router
-from gql.graphql_schema import schema
-from middleware_utils import form_state
+import core.db.logs  # noqa: F401
+from core.middlewares.middleware_utils import form_state
+from presentation.gql.graphql_schema import schema
+from presentation.routers.custom_auth_router import router as auth_router
 
 # from auth.jwt_auth import router as jwt_router
-from speech_task.router import router as speech_task_router
+from presentation.routers.router import router as speech_task_router
 
 app = FastAPI(title="requests proceed API")
 
