@@ -1,20 +1,30 @@
-from typing import Generic, Type, Any
-
-from sqlalchemy.ext.asyncio import AsyncSession
+from abc import ABC, abstractmethod
+from typing import Generic, List, Any
+from uuid import UUID
 
 from application.dtos.base import BaseDTO
 from infrastructure.repositories.base_repository import T, BaseRepository
 
 
-class EntityService(Generic[T]):
-    def __init__(self, model: Type[T], session: AsyncSession):
-        self._base_repo = BaseRepository(model, session)
+class EntityService(ABC, Generic[T]):
+    # @abstractmethod
+    # async def create(self, entity_data: BaseDTO) -> T:
+    #     """Создание сущности"""
+    #     pass
+    #
+    # @abstractmethod
+    # async def get_by_id(
+    #     self, entity_id: int | UUID,
+    #     selected_fields: dict[Any, dict[Any, dict]] | None = None
+    # ) -> T:
+    #     """Получение сущности по ID"""
+    #     pass
 
+    @abstractmethod
     async def create_and_fetch(
-            self, entity_data: BaseDTO,
-            selected_fields: dict[Any, dict[Any, dict]] | None = None
+        self,
+        entity_data: BaseDTO,
+        selected_fields: dict[Any, dict[Any, dict]] | None = None,
     ) -> T:
-        entity_id = await self._base_repo.create(entity_data)
-
-        entity = await self._base_repo.read(entity_id, selected_fields)
-        return entity
+        """Создание сущности и получение её данных"""
+        pass

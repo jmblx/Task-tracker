@@ -11,7 +11,7 @@ from core.utils import create_query_options
 
 
 # Создаем generic тип для модели
-T = TypeVar('T')
+T = TypeVar("T", bound=Base)
 
 
 class BaseRepository(Generic[T]):
@@ -19,30 +19,31 @@ class BaseRepository(Generic[T]):
         self._model = model
         self._session = session
 
-    async def create(
-        self, data: BaseDTO
-    ) -> int | UUID:
-        entitiy_id = (await self._session.execute(
-            insert(self._model).values(
-                asdict(data)
-            ).returning(self._model.id)
-        )).scalar()
+    async def create(self, data: BaseDTO) -> int | UUID:
+        entitiy_id = (
+            await self._session.execute(
+                insert(self._model)
+                .values(asdict(data))
+                .returning(self._model.id)
+            )
+        ).scalar()
         await self._session.commit()
         return entitiy_id
 
-    async def read(self, obj_id: int | UUID, selected_fields: dict[Any, dict[Any, dict]]) -> BaseDTO:
+    async def read(
+        self, obj_id: int | UUID, selected_fields: dict[Any, dict[Any, dict]]
+    ) -> BaseDTO:
         if selected_fields:
-            # selected_fields = extract_selected_fields(
-            #     info, snake_to_camel(function_name)
-            # )                                                                            это в юзкейс откуда это будет вызываться
-            # normalized_operations = to_snake_case(selected_fields)
-            # selected_fields = normalized_operations.get(function_name, {})
             query_options = create_query_options(self._model, selected_fields)
             query = select(self._model)
             for option in query_options or []:
                 query = query.options(option)
             entity = (
-                (await self._session.execute(query.where(self._model.id == obj_id)))
+                (
+                    await self._session.execute(
+                        query.where(self._model.id == obj_id)
+                    )
+                )
                 .unique()
                 .scalar()
             )
@@ -50,7 +51,9 @@ class BaseRepository(Generic[T]):
         return await self._session.get(self._model, obj_id)
 
     async def update(self, obj_id: int | UUID, data: BaseDTO) -> bool:
-        self._session.execute(update(self._model, obj_id).values(**asdict(data)))
+        self._session.execute(
+            update(self._model, obj_id).values(**asdict(data))
+        )
         self._session.commit()
         return True
 
@@ -62,9 +65,9 @@ class BaseRepository(Generic[T]):
         return True
 
     async def all(
-            self,
-            params: Annotated[dict[Any, Any], "параметры для поиска"],
-            selected_fields: dict[Any, dict[Any, dict]]
+        self,
+        params: Annotated[dict[Any, Any], "параметры для поиска"],
+        selected_fields: dict[Any, dict[Any, dict]],
     ) -> list[BaseDTO]:
 
         # selected_fields = extract_selected_fields(
@@ -81,7 +84,5 @@ class BaseRepository(Generic[T]):
             if value is not None:
                 query = query.where(getattr(self, key) == value)
 
-        entities = (
-            (await self._session.execute(query))
-        ).scalars()
+        entities = ((await self._session.execute(query))).scalars()
         return entities

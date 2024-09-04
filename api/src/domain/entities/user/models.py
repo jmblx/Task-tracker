@@ -22,6 +22,7 @@ class User(Base):
     email_confirmation_token = mapped_column(nullable=True, type_=String(50))
     registered_at: Mapped[added_at]
     hashed_password: Mapped[bytes] = mapped_column(BYTEA, nullable=True)
+    # hashed_password: Mapped[str] = mapped_column(String(50))
     # phone_number: Mapped[str] = mapped_column(VARCHAR(12), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     is_verified: Mapped[bool] = mapped_column(default=True)

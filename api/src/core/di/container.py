@@ -1,7 +1,6 @@
 import logging
 import os
 from collections.abc import AsyncIterable
-from typing import Type
 
 import redis.asyncio as aioredis
 from dishka import Provider, Scope, make_async_container, provide
@@ -15,8 +14,15 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from config import AuthJWT, DatabaseConfig, NatsConfig, RedisConfig
-from infrastructure.repositories.base_repository import BaseRepository, T
+from domain.entities.user.models import User
+from domain.services.user.service import UserService
+from infrastructure.external_services.message_routing.notify_service import (
+    NotifyServiceImpl,
+)
 from infrastructure.repositories.user.repository import UserRepository
+from infrastructure.services.entity_service_impl import EntityServiceImpl
+from infrastructure.services.security.pwd_service import HashServiceImpl
+from infrastructure.services.validation.user import RegValidationService
 
 logger = logging.getLogger(__name__)
 
@@ -96,28 +102,47 @@ class AuthProvider(Provider):
         return AuthJWT()
 
 
-class UserProvider(Provider):
-#     @provide(scope=Scope.REQUEST)
-#     def provide_validation_service(self) -> RegValidationService:
-#         pass
-#
-    @provide(scope=Scope.REQUEST)
-    def provide_user_repository(self, base_repo: BaseRepository) -> UserRepository:
-        return UserRepository(base_repo)
-#
-#     @provide(scope=Scope.REQUEST)
-#     def provide_email_service(self) -> EmailService:
-#         pass
-#
-#     @provide(scope=Scope.REQUEST)
-#     def provide_register_user_use_case(self) -> RegisterUserUseCase:
-#         pass
+class ServiceProvider(Provider):
+    @provide(scope=Scope.REQUEST, provides=UserRepository)
+    def provide_user_repository(self, session: AsyncSession) -> UserRepository:
+        return UserRepository(session)
 
+    @provide(scope=Scope.REQUEST, provides=UserService)
+    def provide_user_service(self, session: AsyncSession) -> UserService:
+        entity_service = EntityServiceImpl(User, session)
+        return UserService(entity_service)
 
-class RepositoryProvider(Provider):
-    @provide(scope=Scope.REQUEST)
-    def provide_base_repository(self, session: AsyncSession, model: Type[T]) -> BaseRepository:
-        return BaseRepository(model, session)
+    @provide(scope=Scope.REQUEST, provides=NotifyServiceImpl)
+    def provide_notify_service(self, nats_client: Client) -> NotifyServiceImpl:
+        # Инжектируем NATS клиент в NotifyService
+        return NotifyServiceImpl(nats_client)
+
+    @provide(scope=Scope.REQUEST, provides=HashServiceImpl)
+    def provide_hash_service(self) -> HashServiceImpl:
+        # Предоставляем реализацию HashService
+        return HashServiceImpl()
+
+    @provide(scope=Scope.REQUEST, provides=RegValidationService)
+    def provide_validation_service(self) -> RegValidationService:
+        # Предоставляем реализацию ValidationService
+        return RegValidationService()
+
+    @provide(scope=Scope.REQUEST, provides=CreateUserAndReadUseCase)
+    def provide_create_user_and_read_use_case(
+        self,
+        user_service: UserService,
+        notify_service: NotifyServiceImpl,
+        hash_service: HashServiceImpl,
+        validation_service: RegValidationService,
+    ) -> CreateUserAndReadUseCase:
+        from application.usecases.user.register import CreateUserAndReadUseCase
+
+        return CreateUserAndReadUseCase(
+            user_service=user_service,
+            notify_service=notify_service,
+            hash_service=hash_service,
+            validation_service=validation_service,
+        )
 
 
 container = make_async_container(
@@ -125,5 +150,5 @@ container = make_async_container(
     DBProvider(),
     RedisProvider(),
     AuthProvider(),
-    UserProvider(),
+    ServiceProvider(),
 )

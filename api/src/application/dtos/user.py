@@ -9,7 +9,7 @@ class UserCreateDTO(BaseDTO):
     last_name: str
     email: str
     password: str = field(repr=False)
-    hashed_password: str = field(init=False, default='')
+    hashed_password: str = field(init=False, default="")
     role_id: int | None = None
     is_active: bool = True
     is_verified: bool = False
