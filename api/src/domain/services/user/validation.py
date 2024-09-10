@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
+from application.dtos.user import UserCreateDTO
 
-class ValidationService(ABC):
+
+class UserValidationService(ABC):
     @abstractmethod
-    def validate(self): ...
+    def validate_create_data(self, user_data: dict): ...

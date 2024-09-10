@@ -6,7 +6,6 @@ from sqlalchemy.orm import sessionmaker
 
 from config import DATABASE_URI
 
-# Ссылка на базу данных для создания сессий
 Base = declarative_base()
 
 

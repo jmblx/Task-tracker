@@ -110,7 +110,7 @@ FOLDER_ID = os.environ.get("FOLDER_ID")
 API_ADMIN_PWD = os.environ.get("API_ADMIN_PWD")
 
 
-class AuthJWT(BaseModel):
+class JWTSettings(BaseModel):
     private_key_path: Path = (
         Path(__file__).parent.parent / "certs" / "jwt-private.pem"
     )

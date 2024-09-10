@@ -1,21 +1,20 @@
-from uuid import UUID
-
 import strawberry
 from strawberry import Info
-from strawberry.scalars import JSON
 
 from application.dtos.user import UserCreateDTO
 from application.usecases.user.register import CreateUserAndReadUseCase
+from core.db.utils import get_selected_fields
 
 # from core.db.utils import full_delete_user
 from core.di.container import container
+from core.utils import get_selected_fields
 
 # from domain.entities.user.models import User
 # from presentation.gql.graphql_utils import (
 #     strawberry_delete,
 #     strawberry_update,
 # )
-from presentation.gql.user.inputs import UserCreateType, UserUpdateType
+from presentation.gql.user.inputs import UserCreateType
 from presentation.gql.user.types import UserType
 
 
@@ -32,24 +31,26 @@ class UserMutation:
     # )
     @strawberry.mutation
     async def add_user(self, info: Info, data: UserCreateType) -> UserType:
-        user_dto = UserCreateDTO(
-            first_name=data.first_name,
-            last_name=data.last_name,
-            email=data.email,
-            password=data.password,  # Пароль будет хэшироваться позже
-            role_id=data.role_id,
-            is_active=data.is_active if data.is_active is not None else True,
-            is_verified=(
-                data.is_verified if data.is_verified is not None else False
-            ),
-            pathfile=data.pathfile,
-            tg_id=data.tg_id,
-            tg_settings=data.tg_settings,
-            github_name=data.github_name,
-        )
-        async with container as ioc:
-            interactor = ioc.get(CreateUserAndReadUseCase)
-            return await interactor(info, user_dto)
+        # user_dto = UserCreateDTO(
+        #     first_name=data.first_name,
+        #     last_name=data.last_name,
+        #     email=data.email,
+        #     password=data.password,  # Пароль будет хэшироваться позже
+        #     role_id=data.role_id,
+        #     is_active=data.is_active if data.is_active is not None else True,
+        #     is_verified=(
+        #         data.is_verified if data.is_verified is not None else False
+        #     ),
+        #     pathfile=data.pathfile,
+        #     tg_id=data.tg_id,
+        #     tg_settings=data.tg_settings,
+        #     github_name=data.github_name,
+        # )
+        async with container() as ioc:
+            interactor = await ioc.get(CreateUserAndReadUseCase)
+            selected_fields = get_selected_fields(info, "addUser")
+            user = await interactor(data.__dict__, selected_fields)
+            return UserType.from_instance(user, selected_fields)
 
     # @strawberry.mutation
     # @strawberry_update(User)

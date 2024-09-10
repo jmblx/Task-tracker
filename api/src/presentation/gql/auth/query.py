@@ -1,50 +1,45 @@
 import strawberry
-from fastapi import HTTPException
-from nats.aio.client import Client
-from redis.asyncio import Redis
-from strawberry import Info
 from strawberry.scalars import JSON
-
-from application.utils.auth_helpers import auth_user, refresh_access_token
-from application.utils.helpers import authenticate
-from application.utils.reset_pwd_utils import send_request_change_password
-from config import AuthJWT
+from strawberry.types import Info
+from fastapi import HTTPException
+from starlette.responses import Response
+from application.usecases.auth.change_pwd import RequestChangePasswordUseCase
+from application.usecases.auth.cred_auth import AuthenticateUserUseCase
+from application.usecases.auth.refresh_access_token import (
+    RefreshAccessTokenUseCase,
+)
 from core.di.container import container
-from infrastructure.external_services.myredis.utils import token_to_redis
-from infrastructure.repositories.user.crud import find_user_by_search_data
-from presentation.gql.auth.inputs import UserAuthType
-from presentation.gql.user.inputs import UserFindType
+from presentation.gql.auth.inputs import UserAuthType, FullNameType
 
 
 @strawberry.type
 class AuthQuery:
     @strawberry.field
     async def request_change_password(
-        self,
-        find_data: UserFindType,
+        self, email: str | None = None, full_name: FullNameType | None = None
     ) -> bool:
-        user = await find_user_by_search_data(find_data.__dict__)
+        if not email and not full_name:
+            raise HTTPException(
+                status_code=400, detail="Email or FullName is required"
+            )
         async with container() as ioc:
-            nats_client = ioc.get(Client)
-            redis = await ioc.get(Redis)
-
-            token = await send_request_change_password(nats_client, user.email)
-
-            await token_to_redis(redis, user.id, token)
-
-        return True
+            use_case = await ioc.get(RequestChangePasswordUseCase)
+            return await use_case(
+                email=email,
+                full_name=full_name.to_dict() if not email else None,
+            )
 
     @strawberry.field
-    async def auth_user(
-        self, info: strawberry.types.Info, auth_data: UserAuthType
-    ) -> JSON:
-        user = await auth_user(auth_data.email, auth_data.password)
+    async def auth_user(self, info: Info, auth_data: UserAuthType) -> JSON:
 
         async with container() as ioc:
-            redis = await ioc.get(Redis)
-            auth_settings = await ioc.get(AuthJWT)
-            info.context["response"], access_token = await authenticate(
-                redis, info, user, auth_settings
+            use_case = await ioc.get(AuthenticateUserUseCase)
+
+            response, access_token = await use_case(
+                email=auth_data.email,
+                plain_pwd=auth_data.password,
+                fingerprint=info.context.get("fingerprint"),
+                response=info.context["response"],
             )
 
         return access_token
@@ -57,7 +52,11 @@ class AuthQuery:
         if refresh_token is None:
             raise HTTPException(status_code=401)
 
-        new_access_token = await refresh_access_token(
-            refresh_token, fingerprint
-        )
+        async with container() as ioc:
+            use_case = await ioc.get(RefreshAccessTokenUseCase)
+
+            new_access_token = await use_case(
+                refresh_token=refresh_token, fingerprint=fingerprint
+            )
+
         return {"accessToken": new_access_token}

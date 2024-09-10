@@ -8,15 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from application.utils.jwt_utils import decode_jwt
-from config import AuthJWT
+from config import JWTSettings
 from core.db.database import Base
-from core.di.container import container
+from domain.entities.group.models import Group
+
+# from core.di.container import container
 from domain.entities.organization.models import Organization, UserOrg
 from domain.entities.project.models import Project
-from domain.entities.task.models import Task, UserTask
-from domain.entities.group.models import Group
-from domain.entities.user.models import User
 from domain.entities.role.models import Role
+from domain.entities.task.models import Task, UserTask
+from domain.entities.user.models import User
 
 
 async def update_object(
@@ -176,9 +177,9 @@ def get_model(class_name: str):
 
 async def get_user_by_token(token: str) -> User:
     async with container() as ioc:
-        auth_settings = await ioc.get(AuthJWT)
+        auth_settings = await ioc.get(JWTSettings)
         payload = decode_jwt(token, auth_settings)
-    return await get_user_by_id(payload.get("sub"), load_role=True)
+        return await get_user_by_id(payload.get("sub"), load_role=True)
 
 
 async def get_user_by_id(user_id: UUID, *, load_role: bool = False) -> User:

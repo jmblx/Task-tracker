@@ -6,13 +6,15 @@ from uuid import UUID
 from redis import asyncio as aioredis
 
 if TYPE_CHECKING:
-    from config import AuthJWT
+    from config import JWTSettings
 
 # logging.basicConfig(level=logging.INFO)
 
 
 async def save_refresh_token_to_redis(
-    redis: aioredis.Redis, refresh_token_data: dict, auth_settings: "AuthJWT"
+    redis: aioredis.Redis,
+    refresh_token_data: dict,
+    auth_settings: "JWTSettings",
 ) -> None:
     jti = str(refresh_token_data.pop("jti"))
     user_id = refresh_token_data["user_id"]

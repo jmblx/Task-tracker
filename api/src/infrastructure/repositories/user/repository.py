@@ -1,11 +1,9 @@
-from typing import Any
-
 from application.dtos.user import UserCreateDTO
-from infrastructure.repositories.base_repository import BaseRepository
+from infrastructure.repositories.base_repository import BaseRepositoryImpl
 
 
 class UserRepository:
-    def __init__(self, base_repo: BaseRepository):
+    def __init__(self, base_repo: BaseRepositoryImpl):
         self.base_repo = base_repo
 
     # def get_selected_fields_by_id(

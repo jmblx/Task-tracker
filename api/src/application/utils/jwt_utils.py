@@ -7,12 +7,12 @@ from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerifyMismatchError
 from pytz import timezone
 
-from config import AuthJWT
+from config import JWTSettings
 
 
 def encode_jwt(
     payload: dict,
-    auth_settings: Optional["AuthJWT"] = None,
+    auth_settings: Optional["JWTSettings"] = None,
     expire_minutes: int | None = None,
     expire_timedelta: timedelta | None = None,
 ) -> str:
@@ -40,7 +40,7 @@ def encode_jwt(
     )
 
 
-def decode_jwt(token: str | bytes, auth_settings: AuthJWT) -> dict:
+def decode_jwt(token: str | bytes, auth_settings: JWTSettings) -> dict:
     return jwt.decode(
         token,
         auth_settings.public_key,

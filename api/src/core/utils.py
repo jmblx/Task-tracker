@@ -14,11 +14,12 @@ from sqlalchemy.orm import (
     load_only,
     selectinload,
 )
+from strawberry import Info
 
 from application.utils.jwt_utils import hash_password
 from core.db.database import Base
-from domain.entities.task.models import Task
 from domain.entities.group.models import Group
+from domain.entities.task.models import Task
 from domain.entities.user.models import User
 
 GqlType = TypeVar("GqlType", bound="GqlProtocol")
@@ -146,6 +147,15 @@ def convert_dict_top_level_to_snake_case(data):
         return new_dict
     else:
         return data
+
+
+def get_selected_fields(info: Info, operation_name: str):
+    selected_fields = extract_selected_fields(info, operation_name)
+    normalized_operations = convert_dict_top_level_to_snake_case(
+        selected_fields
+    )
+    selected_fields = normalized_operations.get(operation_name, {})
+    return selected_fields
 
 
 def create_query_options(model: Any, fields: dict[str, Any]) -> list:

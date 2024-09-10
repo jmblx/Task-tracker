@@ -2,17 +2,19 @@ import re
 
 from application.dtos.user import UserCreateDTO
 from core.exceptions.validation.registration import InvalidRegData
-from domain.services.user.validation import ValidationService
+from domain.services.user.validation import UserValidationService
 
 
-class RegValidationService(ValidationService):
-    def validate(self, user_data: UserCreateDTO):
+class RegUserValidationService(UserValidationService):
+    def validate_create_data(self, user_data: dict):
         """
         Выполняет все необходимые проверки для валидации данных пользователя.
         """
-        self._validate_email(user_data.email)
-        self._validate_password(user_data.password)
-        self._validate_name(user_data.first_name, user_data.last_name)
+        self._validate_email(user_data.get("email"))
+        self._validate_password(user_data.get("password"))
+        self._validate_name(
+            user_data.get("first_name"), user_data.get("last_name")
+        )
 
     @staticmethod
     def _validate_password(password: str):

@@ -1,6 +1,6 @@
 import bcrypt
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, InvalidHash
+from argon2.exceptions import InvalidHash, VerifyMismatchError
 
 from domain.services.security.pwd_service import HashService
 

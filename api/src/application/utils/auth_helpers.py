@@ -13,7 +13,7 @@ from domain.entities.user.models import User
 from infrastructure.repositories.user.crud import get_user_by_email
 
 if TYPE_CHECKING:
-    from config import AuthJWT
+    from config import JWTSettings
 
 
 async def auth_user(email: str, password: str | None = None) -> User:
@@ -35,7 +35,7 @@ async def refresh_access_token(refresh_token: str, fingerprint: str) -> str:
 
     async with container() as ioc:
         redis = await ioc.get(Redis)
-        auth_settings = await ioc.get(AuthJWT)
+        auth_settings = await ioc.get(JWTSettings)
         payload = decode_jwt(refresh_token, auth_settings)
         jti = payload.get("jti")
         token_data = await redis.hgetall(f"refresh_token:{jti}")

@@ -1,20 +1,50 @@
+from abc import abstractmethod, ABC
 from typing import Any
 
-from application.dtos.user import UserCreateDTO
-from application.utils.jwt_utils import hash_password
-from core.utils import hash_user_pwd
 from domain.entities.user.models import User
-from domain.services.entity_service import EntityService
 
 
-class UserService(EntityService[User]):
-    def __init__(self, base_service: EntityService):
-        self._base_service = base_service
-
+class UserServiceInterface(ABC):
+    @abstractmethod
     async def create_and_fetch(
         self,
-        data: UserCreateDTO,
+        data: dict[str, Any],
         selected_fields: dict[Any, dict[Any, dict]] | None = None,
     ) -> User:
-        user = await self._base_service.create_and_fetch(data, selected_fields)
-        return user
+        """Создать пользователя и получить его данные по указанным полям."""
+        pass
+
+    @abstractmethod
+    async def get_by_id(
+        self,
+        user_id: int,
+        selected_fields: dict[Any, dict[Any, dict]] | None = None,
+    ) -> User:
+        """Получить пользователя по ID и указанным полям."""
+        pass
+
+    @abstractmethod
+    async def get_by_fields(
+        self,
+        search_params: dict[str, Any],
+        selected_fields: dict[Any, dict[Any, dict]] | None = None,
+    ) -> User:
+        """Получить пользователя по заданным параметрам поиска."""
+        pass
+
+    @abstractmethod
+    async def get_many_by_fields(
+        self,
+        search_params: dict[str, Any],
+        selected_fields: dict[Any, dict[Any, dict]] | None = None,
+        order_by: dict[str, str] | None = None,
+    ) -> list[User]:
+        """Получить список пользователей по заданным параметрам поиска и сортировки."""
+        pass
+
+    @abstractmethod
+    async def update_by_fields(
+        self, search_params: dict[str, Any], upd_data: dict[str, Any]
+    ):
+        """Обновить данные пользователя по заданным параметрам поиска."""
+        pass

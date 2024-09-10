@@ -17,7 +17,7 @@ from infrastructure.external_services.myredis.utils import (
 )
 
 if TYPE_CHECKING:
-    from config import AuthJWT
+    from config import JWTSettings
 
 
 TOKEN_TYPE_FIELD = "type"  # noqa: S105
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 def create_jwt(
     token_type: str,
     token_data: dict,
-    auth_settings: "AuthJWT",
+    auth_settings: "JWTSettings",
     expire_minutes: int | None = None,
     expire_timedelta: timedelta | None = None,
 ) -> dict:
@@ -75,7 +75,7 @@ def create_jwt(
     return result
 
 
-def create_access_token(user: User, auth_settings: "AuthJWT") -> str:
+def create_access_token(user: User, auth_settings: "JWTSettings") -> str:
     jwt_payload = {
         # subject
         "sub": str(user.id),
@@ -93,7 +93,7 @@ def create_access_token(user: User, auth_settings: "AuthJWT") -> str:
 
 
 async def create_refresh_token(
-    user: Any, fingerprint: str, auth_settings: "AuthJWT"
+    user: Any, fingerprint: str, auth_settings: "JWTSettings"
 ) -> dict:
     jti = str(uuid4())
     jwt_payload = {
@@ -117,7 +117,7 @@ async def create_refresh_token(
 
 
 async def authenticate(
-    redis, info: Info, user: User, auth_settings: "AuthJWT"
+    redis, info: Info, user: User, auth_settings: "JWTSettings"
 ) -> tuple[Response, JSON]:
     access_token = create_access_token(user, auth_settings)
     fingerprint = info.context.get("fingerprint", None)

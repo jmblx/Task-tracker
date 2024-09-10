@@ -15,7 +15,7 @@ from strawberry.scalars import JSON
 
 from application.utils.jwt_utils import decode_jwt
 from application.utils.validation import validate_permission
-from config import AuthJWT
+from config import JWTSettings
 from core.db.database import Base
 from core.db.utils import (
     delete_object,
@@ -24,7 +24,8 @@ from core.db.utils import (
     soft_delete,
     update_object,
 )
-from core.di.container import container
+
+# from core.di.container import container
 from core.utils import (
     GqlType,
     convert_dict_top_level_to_snake_case,
@@ -38,9 +39,10 @@ from core.utils import (
 from domain.entities.organization.models import UserOrg
 from domain.entities.task.models import Task, UserTask
 from domain.entities.user.models import User
-from infrastructure.external_services.message_routing.nats_utils import (
-    process_notifications,
-)
+
+# from infrastructure.external_services.message_routing.nats_utils import (
+#     process_notifications,
+# )
 
 logger = logging.getLogger("gql_utils")
 # logstash_handler = TCPLogstashHandler("logstash", 50000)
@@ -96,7 +98,7 @@ async def process_project_staff(
 
 
 def task_preprocess(data: dict, info: Info) -> dict:
-    auth_settings = AuthJWT()
+    auth_settings = JWTSettings()
     if "assigner_id" not in data:
         data["assigner_id"] = decode_jwt(
             info.context.user.id.access_token, auth_settings
