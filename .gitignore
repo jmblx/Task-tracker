@@ -10,4 +10,5 @@
 
 .idea
 
-minio-data
+__pycache__/
+minio-data/
