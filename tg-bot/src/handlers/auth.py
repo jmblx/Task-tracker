@@ -1,10 +1,9 @@
-from aiogram import Router, F, types
-from aiogram.filters import or_f, StateFilter, Command
+from aiogram import F, Router, types
+from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.state import State, StatesGroup
 from redis.asyncio.client import Redis
-
-from utils import login, link
+from core.utils import link, login
 
 user_private_router = Router()
 
@@ -41,7 +40,9 @@ async def fix_email(message: types.Message, state: FSMContext):
 
 
 @user_private_router.message(Auth.password)
-async def fix_password(message: types.Message, state: FSMContext, redis: Redis):
+async def fix_password(
+    message: types.Message, state: FSMContext, redis: Redis
+):
     user_data = await state.get_data()
     user_data["password"] = message.text
     login_response = await login(user_data["email"], user_data["password"])
@@ -52,7 +53,7 @@ async def fix_password(message: types.Message, state: FSMContext, redis: Redis):
             tg_id=message.from_user.id, email=str(user_data["email"])
         )
         await message.answer(
-            f"Успех! Теперь вам будет приходить рассылка по заданиям из трекера времени."
+            "Успех! Теперь вам будет приходить рассылка по заданиям из трекера времени."
         )
     else:
         await message.answer("Неверный логин и/или пароль")

@@ -1,8 +1,8 @@
 import logging
 from email.message import EmailMessage
-import aiosmtplib
 
-from config import SMTP_HOST, SMTP_PORT, SMTP_PASSWORD, SMTP_USER
+import aiosmtplib
+from config import SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_USER
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -2,14 +2,13 @@ import json
 import os
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Any
 
 import aiohttp
 from aiohttp import BasicAuth
 from dotenv import load_dotenv
 from groq import Groq
-from pytz import timezone
+
+from application.utils.utils import get_cur_date
 
 load_dotenv()
 
@@ -214,13 +213,3 @@ async def text_to_task(speech_text: str, api_key: str = "") -> str:
 #     prompt = llama_bot.render(input_json)
 #     response = llama_bot.sent_prompt_and_get_response(prompt)
 #     return response
-
-
-def get_cur_date() -> dict[str, Any]:
-    tz = timezone("Europe/Moscow")
-    now = datetime.now(tz)
-    return {
-        "current_day": now.day,
-        "current_month": now.month,
-        "current_year": now.year,
-    }

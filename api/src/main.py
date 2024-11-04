@@ -1,39 +1,35 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from nats.aio.client import Client
+from fastapi.requests import Request
 
 # from logstash import TCPLogstashHandler
-from starlette.requests import Request
-from starlette_exporter import PrometheusMiddleware, handle_metrics
+# from logstash import TCPLogstashHandler
+# from starlette_exporter import PrometheusMiddleware, handle_metrics
 from strawberry.fastapi import GraphQLRouter
 
-import db.logs  # noqa: F401
-from auth.custom_auth_router import router as auth_router
-from config import NATS_URL
-from gql.graphql_schema import schema
-from middleware_utils import form_state
+import core.db.logs  # noqa: F401
+from config import app_settings
+# from core.gunicorn.app_options import get_app_options
+# from core.gunicorn.application import Application
+from presentation.gql.graphql_schema import schema
+from core.middlewares.middleware_utils import form_state
+from presentation.routers.custom_auth_router import router as auth_router
 
 # from auth.jwt_auth import router as jwt_router
-from speech_task.router import router as speech_task_router
-from user_data.router import router as profile_router
+from presentation.routers.router import router as speech_task_router
 
 app = FastAPI(title="requests proceed API")
 
-nats_client = Client()
 
+logger = logging.getLogger("fastapi")
+logger.setLevel(logging.INFO)
 
-@app.on_event("startup")
-async def startup_event():
-    await nats_client.connect(servers=[NATS_URL])
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await nats_client.close()
-
+# logstash_handler = TCPLogstashHandler("logstash", 50000)
+# logger.addHandler(logstash_handler)
 
 app.include_router(auth_router)
-app.include_router(profile_router)
 app.include_router(speech_task_router)
 
 
@@ -47,21 +43,27 @@ async def add_auth_token_to_context(request: Request, call_next):
     return await call_next(request)
 
 
-async def get_context(request: Request) -> dict:
+def get_default_context(request: Request) -> dict:
     return {
-        "auth_token": request.state.auth_token,
+        "auth_token": request.state.auth_token.replace("Bearer ", ""),
         "refresh_token": request.state.refresh_token,
         "fingerprint": request.state.fingerprint,
-        "nats_client": nats_client,
+        # "nats_client": nats_client,
     }
+
+
+async def get_context(request: Request) -> dict:
+    context = get_default_context(request)
+    logger.info("request context: %s", context)
+    return context
 
 
 graphql_app = GraphQLRouter(schema, context_getter=get_context)
 
 app.include_router(graphql_app, prefix="/graphql")
 
-app.add_middleware(PrometheusMiddleware)
-app.add_route("/metrics", handle_metrics)
+# app.add_middleware(PrometheusMiddleware)
+# app.add_route("/metrics", handle_metrics)
 
 origins = ["*"]
 app.add_middleware(
@@ -76,3 +78,21 @@ app.add_middleware(
         "Authorization",
     ],
 )
+
+
+def main():
+    Application(
+        application=app,
+        options=get_app_options(
+            host=app_settings.gunicorn.host,
+            port=app_settings.gunicorn.port,
+            timeout=app_settings.gunicorn.timeout,
+            workers=app_settings.gunicorn.workers,
+            log_level=app_settings.logging.log_level,
+        ),
+    ).run()
+
+
+# if __name__ == "__main__":
+#     main()
+
