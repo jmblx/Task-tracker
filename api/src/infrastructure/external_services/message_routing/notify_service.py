@@ -12,7 +12,7 @@ class NotifyServiceImpl(NotifyService):
     def __init__(self, nats_client: Client):
         self._nats_client = nats_client
 
-    async def email_register_notify(self, data: dict):
+    async def email_register_notify(self, data: dict) -> None:
         await send_via_nats(self._nats_client, "email.confirmation", data=data)
 
     async def pwd_reset_notify(self, user_email: str) -> str:

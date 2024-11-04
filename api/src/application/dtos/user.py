@@ -2,10 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
-import strawberry
-
 from application.dtos.base import BaseDTO
-from presentation.gql.scalars import DateTime
 
 
 @dataclass

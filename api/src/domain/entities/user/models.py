@@ -37,7 +37,7 @@ class User(Base):
         uselist=True,
         cascade="all, delete-orphan",
     )
-    organizations: Mapped["Organization"] = relationship(
+    organizations: Mapped[list["Organization"]] = relationship(
         "Organization",
         back_populates="staff",
         uselist=True,

@@ -1,15 +1,15 @@
 import strawberry
+from fastapi import HTTPException
 from strawberry.scalars import JSON
 from strawberry.types import Info
-from fastapi import HTTPException
-from starlette.responses import Response
+
 from application.usecases.auth.change_pwd import RequestChangePasswordUseCase
 from application.usecases.auth.cred_auth import AuthenticateUserUseCase
 from application.usecases.auth.refresh_access_token import (
     RefreshAccessTokenUseCase,
 )
 from core.di.container import container
-from presentation.gql.auth.inputs import UserAuthType, FullNameType
+from presentation.gql.auth.inputs import FullNameType, UserAuthType
 
 
 @strawberry.type
@@ -31,18 +31,23 @@ class AuthQuery:
 
     @strawberry.field
     async def auth_user(self, info: Info, auth_data: UserAuthType) -> JSON:
-
         async with container() as ioc:
             use_case = await ioc.get(AuthenticateUserUseCase)
-
-            response, access_token = await use_case(
+            response = info.context.get("response")
+            auth_tokens_dict = await use_case(
                 email=auth_data.email,
                 plain_pwd=auth_data.password,
                 fingerprint=info.context.get("fingerprint"),
-                response=info.context["response"],
+            )
+            response.set_cookie(
+                key="refreshToken",
+                value=auth_tokens_dict.pop("refreshToken"),
+                httponly=True,
+                secure=False,
+                samesite="lax",
             )
 
-        return access_token
+        return auth_tokens_dict
 
     @strawberry.field
     async def refresh(self, info: Info) -> JSON:

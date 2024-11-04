@@ -1,11 +1,10 @@
 import logging
-from datetime import timedelta, datetime
-from typing import Dict, Any
+from datetime import datetime, timedelta
+from typing import Any
 from uuid import uuid4
 
 from fastapi import HTTPException
 from jwt import DecodeError, ExpiredSignatureError
-from pytz import timezone
 from redis.asyncio import Redis
 
 from config import JWTSettings
@@ -13,11 +12,7 @@ from domain.entities.user.models import User
 from domain.services.auth.auth_service import AuthService
 from domain.services.auth.jwt_service import JWTService
 from domain.services.security.pwd_service import HashService
-from domain.services.user.service import UserServiceInterface
-from infrastructure.services.user.service_impl import UserServiceImpl
-from infrastructure.external_services.myredis.utils import (
-    save_refresh_token_to_redis,
-)
+from domain.services.user.user_service_interface import UserServiceInterface
 
 logger = logging.getLogger(__name__)
 
@@ -115,15 +110,15 @@ class AuthServiceImpl(AuthService):
         )
         return refresh_token_data
 
-    async def get_user_by_token(self, token: str) -> User:
+    async def get_user_by_token(self, token: str, selected_fields: dict) -> User:
         """Получает пользователя по токену."""
         payload = self.jwt_service.decode(token)
         user_id = payload.get("sub")
-        return await self.user_service.get_by_id(user_id)
+        return await self.user_service.get_by_id(user_id, selected_fields)
 
     async def get_refresh_token_data(
         self, refresh_token: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         payload = self.jwt_service.decode(refresh_token)
         jti = payload.get("jti")
         token_data = await self.redis.hgetall(f"refresh_token:{jti}")

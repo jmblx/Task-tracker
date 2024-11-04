@@ -1,4 +1,5 @@
 from dishka import make_async_container
+
 from core.di.providers.db import DBProvider
 from core.di.providers.nats_provider import NatsProvider
 from core.di.providers.redis_provider import RedisProvider

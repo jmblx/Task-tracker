@@ -1,10 +1,10 @@
 from fastapi import HTTPException
-from redis.asyncio import Redis
-from infrastructure.services.auth.auth_service import AuthServiceImpl
+
+from domain.services.auth.auth_service import AuthService
 
 
 class RefreshAccessTokenUseCase:
-    def __init__(self, auth_service: AuthServiceImpl):
+    def __init__(self, auth_service: AuthService):
         self.auth_service = auth_service
 
     async def __call__(self, refresh_token: str, fingerprint: str) -> str:

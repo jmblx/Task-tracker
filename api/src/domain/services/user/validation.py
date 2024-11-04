@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-from application.dtos.user import UserCreateDTO
-
 
 class UserValidationService(ABC):
     @abstractmethod

@@ -1,47 +1,117 @@
 import strawberry
 from strawberry import Info
-from strawberry.scalars import JSON
 
-from core.db.utils import full_delete_group
-from domain.entities.group.models import Group
-from presentation.gql.graphql_utils import (
-    strawberry_delete,
-    strawberry_insert,
-    strawberry_update,
+from application.usecases.group.create import CreateGroupAndReadUseCase
+from application.usecases.group.delete import (
+    DeleteAndReadGroupUseCase,
+    DeleteGroupUseCase,
 )
-from presentation.gql.group.inputs import GroupCreateType, GroupUpdateType
+from application.usecases.group.update import (
+    UpdateGroupAndReadUseCase,
+    UpdateGroupUseCase,
+)
+from core.db.utils import get_selected_fields
+from core.di.container import container
+from presentation.gql.gql_types import OrderByInput
+from presentation.gql.group.inputs import (
+    GroupCreateType,
+    GroupFindType,
+    GroupUpdateType,
+)
 from presentation.gql.group.query import GroupType
 
 
 @strawberry.type
 class GroupMutation:
     @strawberry.mutation
-    @strawberry_insert(Group)
     async def add_group(self, info: Info, data: GroupCreateType) -> GroupType:
-        pass
+        async with container() as ioc:
+            interactor = await ioc.get(CreateGroupAndReadUseCase)
+            selected_fields = get_selected_fields(info, "addGroup")
+            print(selected_fields)
+            group = await interactor(data.__dict__, selected_fields)
+            return GroupType.from_instance(group, selected_fields)
 
     @strawberry.mutation
-    @strawberry_update(Group)
-    async def update_group(
-        self, info: Info, item_id: int, data: GroupUpdateType
-    ) -> JSON:
-        pass
+    async def update_groups_with_response(
+        self,
+        info: Info,
+        search_data: GroupFindType,
+        data: GroupUpdateType,
+        order_by: OrderByInput | None = None,
+    ) -> list[GroupType]:
+        async with container() as ioc:
+            upd_data = {
+                key: value
+                for key, value in data.__dict__.items()
+                if value is not None
+            }
+            interactor = await ioc.get(UpdateGroupAndReadUseCase)
+            selected_fields = get_selected_fields(
+                info, "updateGroupsWithResponse"
+            )
+            groups = await interactor(
+                search_data.__dict__,
+                upd_data,
+                selected_fields,
+                order_by.__dict__ if order_by is not None else None,
+            )
+            return [
+                GroupType.from_instance(group, selected_fields)
+                for group in groups
+            ]
 
     @strawberry.mutation
-    @strawberry_update(Group)
-    async def update_group_with_response(
-        self, info: Info, item_id: int, data: GroupUpdateType
-    ) -> GroupType:
-        pass
+    async def update_groups(
+        self,
+        search_data: GroupFindType,
+        data: GroupUpdateType,
+    ) -> bool:
+        async with container() as ioc:
+            upd_data = {
+                key: value
+                for key, value in data.__dict__.items()
+                if value is not None
+            }
+            interactor = await ioc.get(UpdateGroupUseCase)
+            await interactor(
+                search_data.__dict__,
+                upd_data,
+            )
+            return True
 
     @strawberry.mutation
-    @strawberry_delete(Group)
-    async def delete_group(self, info: Info, item_id: int) -> JSON:
-        pass
+    async def delete_group(
+        self, search_data: GroupFindType, full_delete: bool = False
+    ) -> bool:
+        async with container() as ioc:
+            interactor = await ioc.get(DeleteGroupUseCase)
+            await interactor(
+                search_data.__dict__,
+                full_delete,
+            )
+            return True
 
     @strawberry.mutation
-    @strawberry_delete(Group, del_func=full_delete_group)
-    async def delete_group_with_response(
-        self, info: Info, item_id: int
-    ) -> GroupType:
-        pass
+    async def delete_groups_with_response(
+        self,
+        info: Info,
+        search_data: GroupFindType,
+        order_by: OrderByInput | None = None,
+        full_delete: bool = False,
+    ) -> list[GroupType]:
+        async with container() as ioc:
+            interactor = await ioc.get(DeleteAndReadGroupUseCase)
+            selected_fields = get_selected_fields(
+                info, "deleteGroupsWithResponse"
+            )
+            groups = await interactor(
+                search_data.__dict__,
+                selected_fields,
+                order_by.__dict__ if order_by is not None else None,
+                full_delete,
+            )
+            return [
+                GroupType.from_instance(group, selected_fields)
+                for group in groups
+            ]

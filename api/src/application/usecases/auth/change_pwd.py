@@ -1,21 +1,12 @@
-from datetime import timedelta
-from uuid import UUID
-
-from redis.asyncio import Redis
-
 from domain.services.auth.reset_pwd_service import ResetPwdService
-from domain.services.user.service import UserServiceInterface
-from infrastructure.services.user.service_impl import UserServiceImpl
-from infrastructure.external_services.message_routing.notify_service import (
-    NotifyServiceImpl,
-)
-from infrastructure.services.auth.reset_pwd_service import ResetPwdServiceImpl
+from domain.services.notification.service import NotifyService
+from domain.services.user.user_service_interface import UserServiceInterface
 
 
 class RequestChangePasswordUseCase:
     def __init__(
         self,
-        notify_service: NotifyServiceImpl,
+        notify_service: NotifyService,
         user_service: UserServiceInterface,
         reset_pwd_service: ResetPwdService,
     ):

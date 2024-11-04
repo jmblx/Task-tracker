@@ -1,9 +1,10 @@
 import strawberry
 from strawberry import Info
 
-from domain.entities.project.models import Project
+from application.usecases.project.read import ReadProjectUseCase
+from core.di.container import container
+from core.db.utils import get_selected_fields
 from presentation.gql.gql_types import OrderByInput
-from presentation.gql.graphql_utils import strawberry_read
 from presentation.gql.project.inputs import ProjectFindType
 from presentation.gql.project.types import ProjectType
 
@@ -11,11 +12,17 @@ from presentation.gql.project.types import ProjectType
 @strawberry.type
 class ProjectQuery:
     @strawberry.field
-    @strawberry_read(Project, ProjectType, "getProject", need_validation=True)
     async def get_project(
         self,
         info: Info,
         search_data: ProjectFindType,
         order_by: OrderByInput | None = None,
     ) -> list[ProjectType] | None:
-        pass
+        auth_token = info.context.get("auth_token")
+        async with container() as ioc:
+            interactor = await ioc.get(ReadProjectUseCase)
+            selected_fields = get_selected_fields(info, "getProject")
+            projects = await interactor(
+                auth_token, search_data.__dict__, selected_fields, order_by
+            )
+            return [ProjectType.from_instance(project, selected_fields) for project in projects]

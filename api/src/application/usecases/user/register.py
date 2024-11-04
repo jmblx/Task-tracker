@@ -1,15 +1,12 @@
 import secrets
 from typing import Any
 
-from application.dtos.user import UserCreateDTO
 from domain.services.security.pwd_service import HashService
-from domain.services.user.service import UserServiceInterface
-from infrastructure.services.user.service_impl import UserServiceImpl
+from domain.services.user.user_service_interface import UserServiceInterface
 from domain.services.user.validation import UserValidationService
 from infrastructure.external_services.message_routing.notify_service import (
     NotifyService,
 )
-from presentation.gql.user.types import UserType
 
 
 class CreateUserAndReadUseCase:

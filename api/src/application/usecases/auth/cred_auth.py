@@ -1,22 +1,18 @@
-from typing import Tuple
 from fastapi import HTTPException
-from starlette.responses import Response
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from config import JWTSettings
-from infrastructure.services.auth.auth_service import AuthServiceImpl
+from domain.services.auth.auth_service import AuthService
 
 
 class AuthenticateUserUseCase:
-    def __init__(
-        self, auth_service: AuthServiceImpl, auth_settings: JWTSettings
-    ):
+    def __init__(self, auth_service: AuthService, auth_settings: JWTSettings):
         self.auth_service = auth_service
         self.auth_settings = auth_settings
 
     async def __call__(
-        self, fingerprint: str, email: str, plain_pwd: str, response: Response
-    ) -> Tuple[Response, dict]:
+        self, fingerprint: str, email: str, plain_pwd: str
+    ) -> dict[str, str]:
         if not fingerprint:
             raise HTTPException(
                 HTTP_400_BAD_REQUEST, detail="Fingerprint is required"
@@ -30,12 +26,4 @@ class AuthenticateUserUseCase:
             user, fingerprint
         )
 
-        response.set_cookie(
-            key="refreshToken",
-            value=refresh_token,
-            httponly=True,
-            secure=False,
-            samesite="lax",
-        )
-
-        return response, {"accessToken": access_token}
+        return {"accessToken": access_token, "refreshToken": refresh_token}

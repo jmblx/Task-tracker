@@ -108,6 +108,13 @@ def task_preprocess(data: dict, info: Info) -> dict:
 
 def add_from_instance(cls: type):
     def from_instance(cls, instance, selected_fields: dict | None = None):
+        if (
+            isinstance(instance, int | UUID)
+            and "id" in selected_fields
+            and len(selected_fields) == 1
+        ):
+            return cls(id=instance)
+
         if selected_fields is None:
             selected_fields = {}
         kwargs = {}

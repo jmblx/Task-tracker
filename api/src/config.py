@@ -1,9 +1,11 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Загружаем скрытые данные из файла .env
 
@@ -142,3 +144,49 @@ class JWTSettings(BaseModel):
         if self._public_key is None:
             self._public_key = self.public_key_path.read_text()
         return self._public_key
+
+
+class MinIOConfig(BaseModel):
+    endpoint_url: str = os.getenv("MINIO_ENDPOINT_URL")
+    access_key: str = os.getenv("MINIO_ACCESS_KEY")
+    secret_key: str = os.getenv("MINIO_SECRET_KEY")
+
+
+LOG_DEFAULT_FORMAT = "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
+
+
+class RunConfig(BaseModel):
+    host: str = "0.0.0.0"
+    port: int = 8000
+
+
+class GunicornConfig(BaseModel):
+    host: str = "0.0.0.0"
+    port: int = 8000
+    workers: int = 1
+    timeout: int = 900
+
+
+class LoggingConfig(BaseModel):
+    log_level: Literal[
+        'debug',
+        'info',
+        'warning',
+        'error',
+        'critical',
+    ] = 'info'
+    log_format: str = LOG_DEFAULT_FORMAT
+
+
+class AppSettings(BaseSettings):
+    model_config = {
+        "case_sensitive": False,
+        "env_nested_delimiter": "__",
+        "env_prefix": "APP_CONFIG__",
+    }
+    run: RunConfig = RunConfig()
+    gunicorn: GunicornConfig = GunicornConfig()
+    logging: LoggingConfig = LoggingConfig()
+
+
+app_settings = AppSettings()

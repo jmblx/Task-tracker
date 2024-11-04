@@ -10,8 +10,11 @@ from fastapi.requests import Request
 from strawberry.fastapi import GraphQLRouter
 
 import core.db.logs  # noqa: F401
-from core.middlewares.middleware_utils import form_state
+from config import app_settings
+# from core.gunicorn.app_options import get_app_options
+# from core.gunicorn.application import Application
 from presentation.gql.graphql_schema import schema
+from core.middlewares.middleware_utils import form_state
 from presentation.routers.custom_auth_router import router as auth_router
 
 # from auth.jwt_auth import router as jwt_router
@@ -42,7 +45,7 @@ async def add_auth_token_to_context(request: Request, call_next):
 
 def get_default_context(request: Request) -> dict:
     return {
-        "auth_token": request.state.auth_token,
+        "auth_token": request.state.auth_token.replace("Bearer ", ""),
         "refresh_token": request.state.refresh_token,
         "fingerprint": request.state.fingerprint,
         # "nats_client": nats_client,
@@ -75,3 +78,21 @@ app.add_middleware(
         "Authorization",
     ],
 )
+
+
+def main():
+    Application(
+        application=app,
+        options=get_app_options(
+            host=app_settings.gunicorn.host,
+            port=app_settings.gunicorn.port,
+            timeout=app_settings.gunicorn.timeout,
+            workers=app_settings.gunicorn.workers,
+            log_level=app_settings.logging.log_level,
+        ),
+    ).run()
+
+
+# if __name__ == "__main__":
+#     main()
+

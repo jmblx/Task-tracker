@@ -59,7 +59,7 @@ def run_migrations_online() -> None:
     if "asyncpg" in url:  # Если URL асинхронный, заменяем его на синхронный
         sync_url = url.replace(
             "asyncpg", "psycopg2"
-        )  # Заменяем на синхронный драйвер
+        ).replace("?async_fallback=true", "")  # Заменяем на синхронный драйвер
         connectable = create_engine(sync_url, poolclass=pool.NullPool)
     else:
         connectable = engine_from_config(

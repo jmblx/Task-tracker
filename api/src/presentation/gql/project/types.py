@@ -6,8 +6,8 @@ from core.utils import GqlProtocol
 from presentation.gql.graphql_utils import add_from_instance
 from presentation.gql.scalars import DateTime
 
-if TYPE_CHECKING:
-    from presentation.gql.task.types import TaskType
+
+from presentation.gql.task.types import TaskType
 
 
 @strawberry.type

@@ -95,6 +95,33 @@ services:
       - custom
     user: "0"
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"  # Порт для S3-совместимого API
+      - "9001:9001"  # Порт для веб-консоли MinIO
+    environment:
+      MINIO_ROOT_USER: myaccesskey  # Замените на ключ доступа длиной от 3 символов
+      MINIO_ROOT_PASSWORD: mysecretpassword  # Замените на секретный ключ длиной от 8 символов
+    volumes:
+      - ./minio-data:/data  # Папка для хранения данных
+      - ./minio-config:/root/.minio  # Папка для конфигурационных файлов
+    command: server /data --console-address ":9001"
+    restart: always
+
+  mc:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 10;
+      mc alias set myminio http://minio:9000 myaccesskey mysecretpassword;
+      mc mb myminio/users || true;
+      mc policy set private myminio/dodiq
+      "
+
 networks:
   custom:
     driver: bridge
@@ -104,3 +131,5 @@ volumes:
   grafana-config:
   prometheus-data:
   db-data:
+  minio-data:
+  minio-config:

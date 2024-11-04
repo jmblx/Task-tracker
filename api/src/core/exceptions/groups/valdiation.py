@@ -1,0 +1,2 @@
+class InvalidGroupData(Exception):
+    pass

@@ -1,15 +1,23 @@
-from abc import ABC
-from dataclasses import asdict
-from typing import Annotated, Any, Generic, TypeVar
+import logging
+from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
-from sqlalchemy import delete, insert, select, update, desc, asc
+from sqlalchemy import (
+    Row,
+    RowMapping,
+    asc,
+    delete,
+    desc,
+    insert,
+    select,
+    update,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from application.dtos.base import BaseDTO
 from core.db.database import Base
 from core.utils import create_query_options
-from domain.repositories.user_repo import BaseRepository
+from domain.repositories.base_repo import BaseRepository
 
 # Создаем generic тип для модели
 T = TypeVar("T", bound=Base)
@@ -54,9 +62,10 @@ class BaseRepositoryImpl(BaseRepository[T], Generic[T]):
     ) -> list[T]:
         query_options = create_query_options(self._model, selected_fields)
         query = select(self._model)
-
         for key, value in search_data.items():
-            if value is not None:
+            if value is not None and isinstance(value, list):
+                query = query.where(getattr(self._model, key).in_(value))
+            elif value is not None:
                 query = query.where(getattr(self._model, key) == value)
 
         for option in query_options or []:
@@ -73,22 +82,71 @@ class BaseRepositoryImpl(BaseRepository[T], Generic[T]):
         entities = result.unique().scalars().all()
         return entities
 
-    async def update_many_by_fields(
-        self, search_data: dict[str, Any], upd_data: dict[str, Any]
-    ) -> bool:
+    async def update_by_fields(
+        self,
+        search_data: dict[str, Any],
+        upd_data: dict[str, Any],
+        return_id: bool = True,
+    ) -> Sequence[Row | RowMapping | Any] | None:
         stmt = update(self._model)
         for key, value in search_data.items():
             if value is not None:
                 stmt = stmt.where(getattr(self._model, key) == value)
-        await self._session.execute(stmt.values(**upd_data))
+        stmt = stmt.values(**upd_data)
+        if return_id:
+            entities_ids = await self._session.execute(
+                stmt.returning(self._model.id)
+            )
+            await self._session.commit()
+            return entities_ids.scalars().all()
+        await self._session.execute(stmt)
         await self._session.commit()
-        return True
 
-    async def delete(self, search_data: dict[str, Any]) -> bool:
+    async def delete_by_fields(self, search_data: dict[str, Any]) -> bool:
         stmt = delete(self._model)
         for key, value in search_data.items():
             if value is not None:
                 stmt = stmt.where(getattr(self._model, key) == value)
-        await self._session.execute(stmt)
+        result = await self._session.execute(stmt)
         await self._session.commit()
+
+        if result.rowcount == 0:
+            raise ValueError("Object not found for deletion.")
+
+        logging.info(result.rowcount)
+        return True
+
+    async def soft_delete_by_fields(self, search_data: dict[str, Any]) -> bool:
+        stmt = update(self._model)
+        for key, value in search_data.items():
+            if value is not None:
+                stmt = stmt.where(getattr(self._model, key) == value)
+        stmt = stmt.values(is_active=False)
+        result = await self._session.execute(stmt)
+        await self._session.commit()
+        logging.info(result.rowcount)
+        if result.rowcount == 0:
+            raise ValueError("Object not found for soft deletion.")
+        return True
+
+    async def delete_by_ids(self, entity_ids: list[int]):
+        stmt = delete(self._model)
+        stmt = stmt.where(self._model.id.in_(entity_ids))
+        result = await self._session.execute(stmt)
+        await self._session.commit()
+
+        if result.rowcount == 0:
+            raise ValueError("Object not found for soft deletion.")
+        return True
+
+    async def soft_delete_by_ids(self, entity_ids: list[int]):
+        stmt = update(self._model)
+        print(entity_ids, "aaa")
+        stmt = stmt.where(self._model.id.in_(entity_ids)).values(
+            is_active=False
+        )
+        result = await self._session.execute(stmt)
+        await self._session.commit()
+        if result.rowcount == 0:
+            raise ValueError("Object not found for soft deletion.")
         return True
